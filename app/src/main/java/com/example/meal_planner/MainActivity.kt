@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,9 +20,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
 
 class MainActivity : ComponentActivity() {
@@ -40,9 +44,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+//@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun Pager(modifier: Modifier = Modifier) {
+fun Pager(modifier: Modifier) {
     val pagerState = rememberPagerState(pageCount = { 3 }, initialPage = 0)
 //    coroutineScope = rememberCoroutineScope()
 
@@ -58,7 +62,7 @@ fun Pager(modifier: Modifier = Modifier) {
     // Horizontal pager with 2 pages (Gallary view & full (single) image view)
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         userScrollEnabled = true
     ) { page ->
         when (page) {
@@ -71,7 +75,10 @@ fun Pager(modifier: Modifier = Modifier) {
 
 @Composable
 fun BottomNavBar() {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(15.dp),
+        horizontalArrangement = Arrangement.SpaceBetween) {
         Button(onClick = { Log.i("Navbar", "Home") }) { Text("Home") }
         Button(onClick = { Log.i("Navbar", "Recipe") }) { Text("Recipe") }
         Button(onClick = { Log.i("Navbar", "S-List") }) { Text("S-List") }
@@ -79,22 +86,22 @@ fun BottomNavBar() {
 }
 
 @Composable
-fun HomePage(modifier: Modifier) {
-    Column(modifier = modifier) {
-        Text(text = "Home Page")
+fun HomePage(modifier: Modifier = Modifier) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Home Page", fontSize = 30.sp)
     }
 }
 
 @Composable
-fun RecipePage(modifier: Modifier) {
-    Column(modifier = modifier) {
-        Text(text = "Recipe Page")
+fun RecipePage(modifier: Modifier = Modifier) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Recipe Page", fontSize = 30.sp)
     }
 }
 
 @Composable
-fun ShoppingListPage(modifier: Modifier) {
-    Column(modifier = modifier) {
-        Text(text = "Shopping List Page")
+fun ShoppingListPage(modifier: Modifier = Modifier) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Shopping List Page", fontSize = 30.sp)
     }
 }
