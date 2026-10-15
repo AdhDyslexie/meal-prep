@@ -1,13 +1,12 @@
 package com.example.meal_planner
 
-import android.graphics.Color.green
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,27 +14,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -108,6 +105,7 @@ fun HomePage(modifier: Modifier = Modifier) {
 fun RecipePage(modifier: Modifier = Modifier) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Recipe Page", fontSize = 30.sp)
+        RecipeDetials();
     }
 }
 
@@ -148,7 +146,9 @@ fun MealCard() {
 fun MealButton(name: String, onClick: () -> Unit) {
     Button(
         enabled = true, // get from state variable
-        modifier = Modifier.padding(10.dp).size(86.dp, 54.dp),
+        modifier = Modifier
+            .padding(10.dp)
+            .size(86.dp, 54.dp),
 //        colors = buttonColors(Color.Blue),
         contentPadding = PaddingValues(10.dp),
         shape = RoundedCornerShape(10.dp),
@@ -161,4 +161,37 @@ fun MealButton(name: String, onClick: () -> Unit) {
 @Composable
 fun RecipeCard() {
 
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun RecipeDetials() {
+    /*
+     - Details should be an overlay, with dynamic content
+     - Should grow into place when opened
+     - Should shrink into place when closed
+    */
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Button(onClick = { Log.i("RecipeDetials", "Exit") }) { Text("X") }
+        Text(text = "<Recipe Name>", fontSize = 30.sp) // title
+//        Image()
+        Column(modifier = Modifier
+            .fillMaxWidth(0.875f)
+            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+        ) { // Ingredients
+            // Bullet list of ingredients
+            Text("- Ingredient 1")
+            Text("- Ingredient 2")
+            Text("- Ingredient 3")
+        }
+        Column(modifier = Modifier
+            .fillMaxWidth(0.875f)
+            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+        ) { // Instructions
+            // Numbered list of instructions
+            Text("1. Instruction")
+            Text("2. Instruction")
+            Text("3. Instruction")
+        }
+    }
 }
