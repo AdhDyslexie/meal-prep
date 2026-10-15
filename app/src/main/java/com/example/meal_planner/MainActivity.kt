@@ -1,27 +1,36 @@
 package com.example.meal_planner
 
+import android.graphics.Color.green
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,9 +88,9 @@ fun BottomNavBar() {
         .fillMaxWidth()
         .padding(15.dp),
         horizontalArrangement = Arrangement.SpaceBetween) {
-        Button(onClick = { Log.i("Navbar", "Home") }) { Text("Home") }
-        Button(onClick = { Log.i("Navbar", "Recipe") }) { Text("Recipe") }
-        Button(onClick = { Log.i("Navbar", "S-List") }) { Text("S-List") }
+        Button(colors = buttonColors(Color.Blue), onClick = { Log.i("Navbar", "Home") }) { Text("Home") }
+        Button(colors = buttonColors(Color.Red), onClick = { Log.i("Navbar", "Recipe") }) { Text("Recipe") }
+        Button(colors = buttonColors(Color.Green), onClick = { Log.i("Navbar", "S-List") }) { Text("S-List") }
     }
 }
 
@@ -89,6 +98,9 @@ fun BottomNavBar() {
 fun HomePage(modifier: Modifier = Modifier) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Home Page", fontSize = 30.sp)
+        for(i in 0..7) {
+            MealCard()
+        }
     }
 }
 
@@ -104,4 +116,49 @@ fun ShoppingListPage(modifier: Modifier = Modifier) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Shopping List Page", fontSize = 30.sp)
     }
+}
+
+@Composable
+fun MealCard() {
+    /*
+    - Day of week should be queried & then displays
+    - Date should be queried & then displayed
+    - Buttons should open an overlay with the meals details that was assigned to it
+        - Details collected from a database
+    - If nothing is assigned to a button its state should be set to hidden
+    */
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(10.dp)
+        .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween)
+    {
+        Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.Start) {
+            Text(text = "Thu", fontSize = 20.sp, fontWeight = FontWeight.Bold) // Display DoW
+            Text(text = "Oct 15", fontSize = 18.sp) // Display the date of the meal
+        }
+        MealButton("Breakfast", { Log.i("MealCard", "Breakfast Btn") })
+        MealButton("Lunch", { Log.i("MealCard", "Lunch Btn") });
+        MealButton("Dinner", { Log.i("MealCard", "Dinner Btn") });
+    }
+}
+
+@Composable
+fun MealButton(name: String, onClick: () -> Unit) {
+    Button(
+        enabled = true, // get from state variable
+        modifier = Modifier.padding(10.dp).size(86.dp, 54.dp),
+//        colors = buttonColors(Color.Blue),
+        contentPadding = PaddingValues(10.dp),
+        shape = RoundedCornerShape(10.dp),
+        onClick = onClick)
+    {
+        Text(name)
+    }
+}
+
+@Composable
+fun RecipeCard() {
+
 }
