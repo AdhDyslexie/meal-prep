@@ -1,7 +1,10 @@
 package com.example.meal_planner
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -9,9 +12,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-class RecipeViewModel(application: Application) : AndroidViewModel(application), RecipeInterface {
+@Suppress("UNCHECKED_CAST")
+class RecipeViewModelFactory(val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return RecipeViewModel(context) as T
+    }
+}
+class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
 
-    private val dao: RecipeDao = RecipeDatabase.getDatabase(application).recipeDao()
+    private val dao: RecipeDao = RecipeDatabase.getDatabase(context).recipeDao()
 
     override fun getAllRecipes(): Flow<List<RecipeInfo>> {
         return dao.getAllRecipesWithDetails().map { list ->
