@@ -2,6 +2,7 @@ package com.example.meal_planner
 
 import androidx.room3.Dao
 import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import androidx.room3.Transaction
 import kotlinx.coroutines.flow.Flow
@@ -9,62 +10,100 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RecipeDao {
 
-    @Insert
-    fun insert(recipe: Recipe)
-    @Insert
-    fun insert(tag: Tag)
-    @Insert
-    fun insert(ingredient: Ingredient)
-    @Insert
-    fun insert(scheduledRecipe: ScheduledRecipe)
-    @Insert
-    fun insert(image: Image)
-    @Insert
-    fun insert(recipeTag: RecipeTag)
-    @Insert
-    fun insert(recipeIngredient: RecipeIngredient)
+    // --- Inserts ---
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecipe(recipe: Recipe): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTag(tag: Tag): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertIngredient(ingredient: Ingredient): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertScheduledRecipe(scheduledRecipe: ScheduledRecipe): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertImage(image: Image): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecipeTag(recipeTag: RecipeTag)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient)
+
+    // --- Relation Queries ---
+
+    @Transaction
     @Query("SELECT * FROM Recipe")
-    fun allRecipes(): Flow<List<Recipe>>
+    fun getAllRecipesWithDetails(): Flow<List<RecipeWithDetails>>
 
-    @Query("SELECT * FROM Recipe WHERE isSaved = true")
-    fun allSavedRecipes(): Flow<List<Recipe>>
+    @Transaction
+    @Query("SELECT * FROM Recipe WHERE isSaved = 1")
+    fun getSavedRecipesWithDetails(): Flow<List<RecipeWithDetails>>
+
+    @Transaction
+    @Query("SELECT * FROM Recipe WHERE id = :id")
+    fun getRecipeWithDetailsById(id: Int): Flow<RecipeWithDetails?>
+
+    @Transaction
+    @Query("SELECT * FROM ScheduledRecipe")
+    fun getAllScheduledWithDetails(): Flow<List<ScheduledRecipeWithDetails>>
+
+    @Transaction
+    @Query("SELECT * FROM ScheduledRecipe WHERE id = :id")
+    fun getScheduledWithDetailsById(id: Int): Flow<ScheduledRecipeWithDetails?>
+
+    // --- Entity Queries ---
 
     @Query("SELECT * FROM Tag")
-    fun allTags(): List<Tag>
+    fun getAllTags(): Flow<List<Tag>>
 
     @Query("SELECT * FROM Ingredient")
-    fun allIngredients(): Flow<List<Ingredient>>
+    fun getAllIngredients(): Flow<List<Ingredient>>
 
-    @Query("SELECT * FROM Image")
-    fun allImages(): Flow<List<Image>>
+    @Transaction
+    @Query("SELECT * FROM RecipeIngredient")
+    fun getAllRecipeIngredientsWithDetail(): Flow<List<RecipeIngredientWithDetail>>
 
-// REFERENCE:
-//    @Query("SELECT courseoffering.id as id, course.name AS coursename, lecturer.name AS lecturername, courseoffering.year AS year, courseoffering.semester AS semester FROM course,courseoffering,lecturer WHERE lecturer.name=:lect AND lecturerId=lecturer.id AND courseId=course.id ORDER BY "+
-//            "CASE :ordering WHEN 'year' THEN year " +
-//            "WHEN 'semester' THEN semester "+
-//            "WHEN 'coursename' THEN coursename END DESC")
+    @Query("SELECT * FROM Image WHERE recipeId = :recipeId")
+    fun getImagesForRecipe(recipeId: Int): Flow<List<Image>>
 
-    @Transaction()
-    @Query("SELECT Recipe.id AS id, Recipe.name AS name, Recipe.description AS description, Recipe.instructions AS instructions, Recipe.prepTimeMinutes AS prepTimeMinutes, Recipe.cookTimeMinutes AS cookTimeMinutes, Recipe.isSaved AS isSaved FROM Recipe")
-    fun allRecipeInfo(): Flow<List<RecipeInfo>>
+    // --- Updates ---
 
+    @Query("UPDATE Recipe SET isSaved = :isSaved WHERE id = :recipeId")
+    suspend fun updateRecipeSavedState(recipeId: Int, isSaved: Boolean)
 
+    @Query("UPDATE ScheduledRecipe SET hasCooked = :haveCooked WHERE id = :scheduledId")
+    suspend fun updateScheduledCookedState(scheduledId: Int, haveCooked: Boolean)
 
+    // --- Deletes ---
 
-    @Query("DELETE * FROM Recipe Tag RecipeTag Ingredient RecipeIngredient Image ScheduledRecipe")
-    fun deleteAll()
+    @Query("DELETE FROM Recipe WHERE id = :id")
+    suspend fun deleteRecipeById(id: Int)
 
-    @Query("DELETE FROM Recipe WHERE id = :recipe.id")
-    fun delete(recipe: Recipe)
+    @Query("DELETE FROM Tag WHERE id = :id")
+    suspend fun deleteTagById(id: Int)
 
-    @Query("DELETE FROM Tag WHERE id = :tag.id")
-    fun delete(tag: Tag)
+    @Query("DELETE FROM Ingredient WHERE id = :id")
+    suspend fun deleteIngredientById(id: Int)
 
-    @Query("DELETE FROM Ingredient WHERE id = :ingredient.id")
-    fun delete(ingredient: Ingredient)
+    @Query("DELETE FROM Image WHERE id = :id")
+    suspend fun deleteImageById(id: Int)
 
-    @Query("DELETE FROM ScheduledRecipe WHERE id = :scheduledRecipe.id")
-    fun delete(scheduledRecipe: ScheduledRecipe)
+    @Query("DELETE FROM ScheduledRecipe WHERE id = :id")
+    suspend fun deleteScheduledRecipeById(id: Int)
 
+    @Query("DELETE FROM Recipe")
+    suspend fun deleteAllRecipes()
+
+    @Query("DELETE FROM Tag")
+    suspend fun deleteAllTags()
+
+    @Query("DELETE FROM Ingredient")
+    suspend fun deleteAllIngredients()
+
+    @Query("DELETE FROM ScheduledRecipe")
+    suspend fun deleteAllScheduledRecipes()
 }
