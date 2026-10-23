@@ -62,7 +62,7 @@ data class Ingredient(
     val name: String,
 )
 
-/*@Entity(
+@Entity(
     primaryKeys = ["recipeId", "ingredientId"],
     foreignKeys = [
         ForeignKey(
@@ -86,7 +86,7 @@ data class RecipeIngredient(
     val ingredientId: Int,
     val quantity: Float,
     val unit: String
-)*/
+)
 
 /*
 @Entity(

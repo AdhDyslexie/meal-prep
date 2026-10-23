@@ -19,7 +19,7 @@ import java.time.LocalDateTime
         Tag::class,
         RecipeTag::class,
         Ingredient::class,
-//        RecipeIngredient::class,
+        RecipeIngredient::class,
 //        ScheduledRecipe::class
     ],
     version = 1
@@ -71,12 +71,12 @@ abstract class RecipeDatabase : RoomDatabase() {
             val tag3 = dao.insertTag(Tag(name = "Healthy")).toInt()
 
             // Seed Ingredients
-            dao.insertIngredient(Ingredient(name = "Spaghetti"))
-            dao.insertIngredient(Ingredient(name = "Eggs"))
-            dao.insertIngredient(Ingredient(name = "Pancetta"))
-            dao.insertIngredient(Ingredient(name = "Parmesan Cheese"))
-            dao.insertIngredient(Ingredient(name = "Oats"))
-            dao.insertIngredient(Ingredient(name = "Milk"))
+            val ing1 = dao.insertIngredient(Ingredient(name = "Spaghetti")).toInt()
+            val ing2 = dao.insertIngredient(Ingredient(name = "Eggs")).toInt()
+            val ing3 = dao.insertIngredient(Ingredient(name = "Pancetta")).toInt()
+            val ing4 = dao.insertIngredient(Ingredient(name = "Parmesan Cheese")).toInt()
+            val ing5 = dao.insertIngredient(Ingredient(name = "Oats")).toInt()
+            val ing6 = dao.insertIngredient(Ingredient(name = "Milk")).toInt()
 
             // Seed Recipe
             val recipe1 = dao.insertRecipe(
@@ -91,9 +91,24 @@ abstract class RecipeDatabase : RoomDatabase() {
                 )
             ).toInt()
 
+            // Seed Recipe Tags
             dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag1))
             dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag2))
             dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag3))
+
+            // Seed Recipe Ingredients
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing1,
+                quantity = 100f, unit = "grams"))
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing2,
+                quantity = 1f, unit = ""))
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing3,
+                quantity = 100f, unit = "grams"))
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing4,
+                quantity = 50f, unit = "grams"))
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing5,
+                quantity = 100f, unit = "grams"))
+            dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing6,
+                quantity = 100f, unit = "grams"))
 
             Log.i("RecipeDatabase", "Database seeding completed successfully!")
         }
