@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -16,13 +17,14 @@ import java.time.LocalDateTime
     entities = [
         Recipe::class,
         Tag::class,
-        RecipeTag::class,
+//        RecipeTag::class,
         Ingredient::class,
-        RecipeIngredient::class,
-        ScheduledRecipe::class
+//        RecipeIngredient::class,
+//        ScheduledRecipe::class
     ],
     version = 1
 )
+@TypeConverters(Converters::class)
 abstract class RecipeDatabase : RoomDatabase() {
     abstract fun RecipeDao(): RecipeDao
 

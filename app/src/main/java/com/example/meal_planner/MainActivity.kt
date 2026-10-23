@@ -36,12 +36,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
 
+/*
+FUCK ANDROID DATABASES!
+THREE FUCKING DAYS WASTED TRYING TO GET THIS SHIT TO WORK!
+
+Thank you for listening to my ted talk
+*/
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: RecipeViewModel by viewModels { RecipeViewModelFactory(application) }
-        val db = RecipeDatabase.getDatabase(application)
         enableEdgeToEdge()
         setContent {
             MealplannerTheme {
@@ -64,14 +70,16 @@ fun Pager(modifier: Modifier, viewmodel: RecipeViewModel) {
 
 //    var canNavigate by remember { mutableStateOf(false) }
 
-    // Disable navigation when on gallary page
+    // Disable navigation when on gallery page
 //    LaunchedEffect(pagerState.currentPage) {
 //        if (pagerState.currentPage == 0) {
 //            canNavigate = false
 //        }
 //    }
-//    val test = viewmodel.getAllRecipes().collectAsState(emptyList()).value
-//    Log.i("Pager", test.toString())
+
+    // Trigger db seeding
+    val test = viewmodel.getAllRecipes().collectAsState(emptyList()).value
+    Log.i("Pager", test.toString())
 
     // Horizontal pager with 2 pages (Gallary view & full (single) image view)
     HorizontalPager(

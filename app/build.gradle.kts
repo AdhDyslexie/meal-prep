@@ -7,10 +7,10 @@ plugins {
 }
 
 android {
-    namespace="nz.massey.roomy"
+    namespace="com.example.meal_planner"
     compileSdk=37
     defaultConfig {
-        applicationId= "nz.massey.roomy"
+        applicationId= "com.example.meal_planner"
         minSdk=26
         targetSdk=37
         versionCode=1

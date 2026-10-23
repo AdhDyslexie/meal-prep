@@ -20,14 +20,14 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIngredient(ingredient: Ingredient): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+/*    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertScheduledRecipe(scheduledRecipe: ScheduledRecipe): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipeTag(recipeTag: RecipeTag)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient)
+    suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient)*/
 
     // --- Relation Queries ---
 
@@ -35,21 +35,21 @@ interface RecipeDao {
     @Query("SELECT * FROM Recipe")
     fun getAllRecipesWithDetails(): Flow<List<Recipe>>
 
-    @Transaction
+/*    @Transaction
     @Query("SELECT * FROM Recipe WHERE isSaved = 1")
     fun getSavedRecipesWithDetails(): Flow<List<RecipeWithDetails>>
 
     @Transaction
     @Query("SELECT * FROM Recipe WHERE id = :id")
-    fun getRecipeWithDetailsById(id: Int): Flow<RecipeWithDetails?>
+    fun getRecipeWithDetailsById(id: Int): Flow<RecipeWithDetails?>*/
 
-    @Transaction
+/*    @Transaction
     @Query("SELECT * FROM ScheduledRecipe")
     fun getAllScheduledWithDetails(): Flow<List<ScheduledRecipeWithDetails>>
 
     @Transaction
     @Query("SELECT * FROM ScheduledRecipe WHERE id = :id")
-    fun getScheduledWithDetailsById(id: Int): Flow<ScheduledRecipeWithDetails?>
+    fun getScheduledWithDetailsById(id: Int): Flow<ScheduledRecipeWithDetails?>*/
 
     // --- Entity Queries ---
 
@@ -59,17 +59,17 @@ interface RecipeDao {
     @Query("SELECT * FROM Ingredient")
     fun getAllIngredients(): Flow<List<Ingredient>>
 
-    @Transaction
+/*    @Transaction
     @Query("SELECT * FROM RecipeIngredient")
-    fun getAllRecipeIngredientsWithDetail(): Flow<List<RecipeIngredientWithDetail>>
+    fun getAllRecipeIngredientsWithDetail(): Flow<List<RecipeIngredientWithDetail>>*/
 
     // --- Updates ---
 
     @Query("UPDATE Recipe SET isSaved = :isSaved WHERE id = :recipeId")
     suspend fun updateRecipeSavedState(recipeId: Int, isSaved: Boolean)
 
-    @Query("UPDATE ScheduledRecipe SET hasCooked = :haveCooked WHERE id = :scheduledId")
-    suspend fun updateScheduledCookedState(scheduledId: Int, haveCooked: Boolean)
+/*    @Query("UPDATE ScheduledRecipe SET hasCooked = :haveCooked WHERE id = :scheduledId")
+    suspend fun updateScheduledCookedState(scheduledId: Int, haveCooked: Boolean)*/
 
     // --- Deletes ---
 
@@ -82,11 +82,8 @@ interface RecipeDao {
     @Query("DELETE FROM Ingredient WHERE id = :id")
     suspend fun deleteIngredientById(id: Int)
 
-    @Query("DELETE FROM Image WHERE id = :id")
-    suspend fun deleteImageById(id: Int)
-
-    @Query("DELETE FROM ScheduledRecipe WHERE id = :id")
-    suspend fun deleteScheduledRecipeById(id: Int)
+/*    @Query("DELETE FROM ScheduledRecipe WHERE id = :id")
+    suspend fun deleteScheduledRecipeById(id: Int)*/
 
     @Query("DELETE FROM Recipe")
     suspend fun deleteAllRecipes()
@@ -97,6 +94,6 @@ interface RecipeDao {
     @Query("DELETE FROM Ingredient")
     suspend fun deleteAllIngredients()
 
-    @Query("DELETE FROM ScheduledRecipe")
-    suspend fun deleteAllScheduledRecipes()
+/*    @Query("DELETE FROM ScheduledRecipe")
+    suspend fun deleteAllScheduledRecipes()*/
 }

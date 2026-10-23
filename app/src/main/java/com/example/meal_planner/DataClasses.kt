@@ -69,6 +69,7 @@ data class ScheduledRecipeInfo(
 
 // --- Room Relation Classes for Querying Composite Data ---
 
+/*
 data class RecipeIngredientWithDetail(
     @Embedded val recipeIngredient: RecipeIngredient,
     @Relation(
@@ -77,13 +78,15 @@ data class RecipeIngredientWithDetail(
     )
     val ingredient: Ingredient
 )
+*/
 
-data class RecipeWithDetails(
+/*data class RecipeWithDetails(
     @Embedded val recipe: Recipe,
 
     @Relation(
+        entity = RecipeIngredient::class,
         parentColumn = "id",
-        entityColumn= "recipeId"
+        entityColumn = "recipeId"
     )
     val ingredients: List<RecipeIngredientWithDetail>,
 
@@ -97,8 +100,9 @@ data class RecipeWithDetails(
         )
     )
     val tags: List<Tag>,
-)
+)*/
 
+/*
 data class ScheduledRecipeWithDetails(
     @Embedded val scheduledRecipe: ScheduledRecipe,
 
@@ -141,4 +145,4 @@ fun ScheduledRecipeWithDetails.toScheduledRecipeInfo(): ScheduledRecipeInfo {
         haveCooked = scheduledRecipe.hasCooked,
         recipeInfo = recipeWithDetails.toRecipeInfo()
     )
-}
+}*/

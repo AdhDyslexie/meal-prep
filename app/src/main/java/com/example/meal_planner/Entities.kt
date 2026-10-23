@@ -1,7 +1,6 @@
 
 package com.example.meal_planner
 
-import android.R
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -32,7 +31,7 @@ data class Tag(
     val name: String,
 )
 
-@Entity(
+/*@Entity(
     primaryKeys = ["recipeId", "tagId"],
     foreignKeys = [
         ForeignKey(
@@ -47,13 +46,14 @@ data class Tag(
             childColumns = ["tagId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("tagId")]
 )
 @Serializable
 data class RecipeTag(
     val recipeId: Int,
     val tagId: Int
-)
+)*/
 
 @Entity
 @Serializable
@@ -62,7 +62,7 @@ data class Ingredient(
     val name: String,
 )
 
-@Entity(
+/*@Entity(
     primaryKeys = ["recipeId", "ingredientId"],
     foreignKeys = [
         ForeignKey(
@@ -77,7 +77,8 @@ data class Ingredient(
             childColumns = ["ingredientId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("ingredientId")]
 )
 @Serializable
 data class RecipeIngredient(
@@ -85,8 +86,9 @@ data class RecipeIngredient(
     val ingredientId: Int,
     val quantity: Float,
     val unit: String
-)
+)*/
 
+/*
 @Entity(
     foreignKeys = [
         ForeignKey(
@@ -95,7 +97,8 @@ data class RecipeIngredient(
             childColumns = ["recipeId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("recipeId")]
 )
 @Serializable
 data class ScheduledRecipe(
@@ -104,4 +107,4 @@ data class ScheduledRecipe(
     val mealType: MealType,
     val hasCooked: Boolean,
     val recipeId: Int
-)
+)*/
