@@ -3,35 +3,6 @@ package com.example.meal_planner
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 
-/* Class Diagram
-class RecipeInterface {
-	<<interface>>
-
-	~getAllRecipes() Flow~List~RecipeInfo~~
-	~getallSavedRecipes() Flow~List~RecipeInfo~~
-	~getAllScheduledInfo() Flow~List~ScheduledRecipeInfo~~
-	~getAllTags() Flow~List~Tag~~
-	~getAllIngredients() Flow~List~IngredientsInfo~~
-	~getRecipeInfo(id: int) Flow~List~RecipeInfo~~
-	~getScheduledInfo(id: int) Flow~List~ScheduledRecipeInfo~~
-
-	~newRecipe(name: String, description: String, instructions: List~String~, isSaved: Boolean. time: List<Int>)
-	~newTag(name: String, recipe: Recipe)
-	~newIngredient(name: String, quantity: float, unit: String, recipe: Recipe)
-	~newSchedule(date: datetime, mealType: String, haveCooked: Boolean, recipe: Recipe)
-
-	~deleteRecipe(id: int)
-	~deleteTag(id: int)
-	~deleteIngredient(id: int)
-	~deleteSchedule(id: int)
-
-	~updateRecipeSavedState(recipeId: int, isSaved: Boolean)
-	~updateRecipeCookedSate(scheduledId: int, haveCooked: Boolean)
-}
-*/
-
-
-
 interface RecipeInterface {
     fun getAllRecipes(): Flow<List<Recipe>>
     fun getAllSavedRecipes(): Flow<List<RecipeInfo>>

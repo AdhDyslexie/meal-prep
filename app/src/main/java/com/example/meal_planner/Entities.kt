@@ -31,7 +31,7 @@ data class Tag(
     val name: String,
 )
 
-/*@Entity(
+@Entity(
     primaryKeys = ["recipeId", "tagId"],
     foreignKeys = [
         ForeignKey(
@@ -53,7 +53,7 @@ data class Tag(
 data class RecipeTag(
     val recipeId: Int,
     val tagId: Int
-)*/
+)
 
 @Entity
 @Serializable

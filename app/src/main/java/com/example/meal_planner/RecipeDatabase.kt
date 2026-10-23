@@ -17,7 +17,7 @@ import java.time.LocalDateTime
     entities = [
         Recipe::class,
         Tag::class,
-//        RecipeTag::class,
+        RecipeTag::class,
         Ingredient::class,
 //        RecipeIngredient::class,
 //        ScheduledRecipe::class
@@ -66,9 +66,9 @@ abstract class RecipeDatabase : RoomDatabase() {
             Log.i("RecipeDatabase", "Seeding database...")
 
             // Seed Tags
-            dao.insertTag(Tag(name = "Italian"))
-            dao.insertTag(Tag(name = "Quick & Easy"))
-            dao.insertTag(Tag(name = "Healthy"))
+            val tag1 = dao.insertTag(Tag(name = "Italian")).toInt()
+            val tag2 = dao.insertTag(Tag(name = "Quick & Easy")).toInt()
+            val tag3 = dao.insertTag(Tag(name = "Healthy")).toInt()
 
             // Seed Ingredients
             dao.insertIngredient(Ingredient(name = "Spaghetti"))
@@ -79,7 +79,7 @@ abstract class RecipeDatabase : RoomDatabase() {
             dao.insertIngredient(Ingredient(name = "Milk"))
 
             // Seed Recipe
-            dao.insertRecipe(
+            val recipe1 = dao.insertRecipe(
                 Recipe(
                     name = "Spaghetti Carbonara",
                     description = "Classic Italian pasta dish with eggs, cheese, and pancetta.",
@@ -89,7 +89,11 @@ abstract class RecipeDatabase : RoomDatabase() {
                     cookTimeMinutes = 15,
                     isSaved = true
                 )
-            )
+            ).toInt()
+
+            dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag1))
+            dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag2))
+            dao.insertRecipeTag(RecipeTag(recipeId = recipe1, tagId = tag3))
 
             Log.i("RecipeDatabase", "Database seeding completed successfully!")
         }
