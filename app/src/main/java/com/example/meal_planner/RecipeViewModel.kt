@@ -20,95 +20,53 @@ class RecipeViewModelFactory(val context: Context) : ViewModelProvider.Factory {
 }
 class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
 
-    private val dao: RecipeDao = RecipeDatabase.getDatabase(context).recipeDao()
+    // REMINDER: Only function that modify the db (create, update, delete) need coroutines.
 
-    override fun getAllRecipes(): Flow<List<RecipeInfo>> {
-        return dao.getAllRecipesWithDetails().map { list ->
-            list.map { it.toRecipeInfo() }
-        }
+    val mDao: RecipeDao
+    init {
+        val db = RecipeDatabase.getDatabase(context)
+        mDao = db.RecipeDao()
     }
+    override fun getAllRecipes() = mDao.getAllRecipesWithDetails()
+
 
     override fun getAllSavedRecipes(): Flow<List<RecipeInfo>> {
-        return dao.getSavedRecipesWithDetails().map { list ->
-            list.map { it.toRecipeInfo() }
-        }
+        TODO("Not yet implemented")
     }
 
     override fun getAllScheduledInfo(): Flow<List<ScheduledRecipeInfo>> {
-        return dao.getAllScheduledWithDetails().map { list ->
-            list.map { it.toScheduledRecipeInfo() }
-        }
+        TODO("Not yet implemented")
     }
 
     override fun getAllTags(): Flow<List<Tag>> {
-        return dao.getAllTags()
+        TODO("Not yet implemented")
     }
 
     override fun getAllIngredients(): Flow<List<IngredientsInfo>> {
-        return dao.getAllRecipeIngredientsWithDetail().map { list ->
-            list.map {
-                IngredientsInfo(
-                    id = it.recipeIngredient.ingredientId,
-                    name = it.ingredient.name,
-                    quantity = it.recipeIngredient.quantity,
-                    unit = it.recipeIngredient.unit
-                )
-            }
-        }
-    }
-
-    override fun getImage(id: Int): Flow<List<Image>> {
-        return dao.getImagesForRecipe(id)
+        TODO("Not yet implemented")
     }
 
     override fun getRecipeInfo(id: Int): Flow<List<RecipeInfo>> {
-        return dao.getRecipeWithDetailsById(id).map { item ->
-            if (item != null) listOf(item.toRecipeInfo()) else emptyList()
-        }
+        TODO("Not yet implemented")
     }
 
     override fun getScheduledInfo(id: Int): Flow<List<ScheduledRecipeInfo>> {
-        return dao.getScheduledWithDetailsById(id).map { item ->
-            if (item != null) listOf(item.toScheduledRecipeInfo()) else emptyList()
-        }
+        TODO("Not yet implemented")
     }
 
     override fun newRecipe(
         name: String,
         description: String,
         instructions: List<String>,
+        image: String,
         isSaved: Boolean,
         time: List<Int>
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val prep = time.getOrNull(0) ?: 0
-            val cook = time.getOrNull(1) ?: 0
-            val recipe = Recipe(
-                name = name,
-                description = description,
-                instructions = instructions.joinToString("\n"),
-                mealType = MealType.DINNER,
-                prepTimeMinutes = prep,
-                cookTimeMinutes = cook,
-                isSaved = isSaved
-            )
-            dao.insertRecipe(recipe)
-        }
-    }
-
-    override fun newImage(path: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.insertImage(Image(path = path, recipeId = 1))
-        }
+        TODO("Not yet implemented")
     }
 
     override fun newTag(name: String, recipe: Recipe) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val tagId = dao.insertTag(Tag(name = name)).toInt()
-            if (recipe.id != 0) {
-                dao.insertRecipeTag(RecipeTag(recipeId = recipe.id, tagId = tagId))
-            }
-        }
+        TODO("Not yet implemented")
     }
 
     override fun newIngredient(
@@ -117,19 +75,7 @@ class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
         unit: String,
         recipe: Recipe
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val ingredientId = dao.insertIngredient(Ingredient(name = name)).toInt()
-            if (recipe.id != 0) {
-                dao.insertRecipeIngredient(
-                    RecipeIngredient(
-                        recipeId = recipe.id,
-                        ingredientId = ingredientId,
-                        quantity = quantity,
-                        unit = unit
-                    )
-                )
-            }
-        }
+        TODO("Not yet implemented")
     }
 
     override fun newSchedule(
@@ -138,57 +84,30 @@ class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
         haveCooked: Boolean,
         recipe: Recipe
     ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.insertScheduledRecipe(
-                ScheduledRecipe(
-                    date = date,
-                    mealType = mealType,
-                    hasCooked = haveCooked,
-                    recipeId = recipe.id
-                )
-            )
-        }
+        TODO("Not yet implemented")
     }
 
     override fun deleteRecipe(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteRecipeById(id)
-        }
-    }
-
-    override fun deleteImage(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteImageById(id)
-        }
+        TODO("Not yet implemented")
     }
 
     override fun deleteTag(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteTagById(id)
-        }
+        TODO("Not yet implemented")
     }
 
     override fun deleteIngredient(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteIngredientById(id)
-        }
+        TODO("Not yet implemented")
     }
 
     override fun deleteSchedule(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.deleteScheduledRecipeById(id)
-        }
+        TODO("Not yet implemented")
     }
 
     override fun updateRecipeSavedState(recipeId: Int, isSaved: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.updateRecipeSavedState(recipeId, isSaved)
-        }
+        TODO("Not yet implemented")
     }
 
     override fun updateRecipeCookedSate(scheduledId: Int, haveCooked: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            dao.updateScheduledCookedState(scheduledId, haveCooked)
-        }
+        TODO("Not yet implemented")
     }
 }

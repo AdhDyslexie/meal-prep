@@ -1,9 +1,10 @@
 package com.example.meal_planner
 
-import androidx.room3.Embedded
-import androidx.room3.Junction
-import androidx.room3.Relation
+import androidx.room.Embedded
+import androidx.room.Junction
+import androidx.room.Relation
 import java.time.LocalDateTime
+import kotlinx.datetime.LocalDate
 
 /* Class Diagram
 class RecipeInfo {
@@ -47,7 +48,7 @@ data class RecipeInfo(
     val tags: List<String>,
     val prepTime: Float,
     val cookTime: Float,
-    val imagePath: String,
+    val image: String = "",
     val isSaved: Boolean
 )
 
@@ -60,7 +61,7 @@ data class IngredientsInfo(
 
 data class ScheduledRecipeInfo(
     val id: Int,
-    val date: LocalDateTime,
+    val date: String, // Store as YYYY-MM-DD
     val mealType: String,
     val haveCooked: Boolean,
     val recipeInfo: RecipeInfo
@@ -71,8 +72,8 @@ data class ScheduledRecipeInfo(
 data class RecipeIngredientWithDetail(
     @Embedded val recipeIngredient: RecipeIngredient,
     @Relation(
-        parentColumns = ["ingredientId"],
-        entityColumns = ["id"]
+        parentColumn = "ingredientId",
+        entityColumn = "id"
     )
     val ingredient: Ingredient
 )
@@ -81,27 +82,21 @@ data class RecipeWithDetails(
     @Embedded val recipe: Recipe,
 
     @Relation(
-        parentColumns = ["id"],
-        entityColumns = ["recipeId"]
+        parentColumn = "id",
+        entityColumn= "recipeId"
     )
     val ingredients: List<RecipeIngredientWithDetail>,
 
     @Relation(
-        parentColumns = ["id"],
-        entityColumns = ["id"],
+        parentColumn = "id",
+        entityColumn = "id",
         associateBy = Junction(
             value = RecipeTag::class,
-            parentColumns = ["recipeId"],
-            entityColumns = ["tagId"]
+            parentColumn = "recipeId",
+            entityColumn = "tagId"
         )
     )
     val tags: List<Tag>,
-
-    @Relation(
-        parentColumns = ["id"],
-        entityColumns = ["recipeId"]
-    )
-    val images: List<Image>
 )
 
 data class ScheduledRecipeWithDetails(
@@ -109,8 +104,8 @@ data class ScheduledRecipeWithDetails(
 
     @Relation(
         entity = Recipe::class,
-        parentColumns = ["recipeId"],
-        entityColumns = ["id"]
+        parentColumn = "recipeId",
+        entityColumn = "id"
     )
     val recipeWithDetails: RecipeWithDetails
 )
@@ -134,7 +129,6 @@ fun RecipeWithDetails.toRecipeInfo(): RecipeInfo {
         tags = tags.map { it.name },
         prepTime = recipe.prepTimeMinutes.toFloat(),
         cookTime = recipe.cookTimeMinutes.toFloat(),
-        imagePath = images.firstOrNull()?.path ?: "",
         isSaved = recipe.isSaved
     )
 }

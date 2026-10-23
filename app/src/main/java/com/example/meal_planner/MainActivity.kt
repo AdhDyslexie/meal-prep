@@ -1,5 +1,6 @@
 package com.example.meal_planner
 
+import android.content.Context
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.util.Log
@@ -25,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,12 +41,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val viewModel: RecipeViewModel by viewModels { RecipeViewModelFactory(application) }
+        val db = RecipeDatabase.getDatabase(application)
         enableEdgeToEdge()
         setContent {
             MealplannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize(), bottomBar = { BottomNavBar() }) { innerPadding ->
                     Pager(
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        viewModel
                     )
                 }
             }
@@ -54,7 +58,7 @@ class MainActivity : ComponentActivity() {
 
 //@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun Pager(modifier: Modifier) {
+fun Pager(modifier: Modifier, viewmodel: RecipeViewModel) {
     val pagerState = rememberPagerState(pageCount = { 3 }, initialPage = 0)
 //    coroutineScope = rememberCoroutineScope()
 
@@ -66,6 +70,8 @@ fun Pager(modifier: Modifier) {
 //            canNavigate = false
 //        }
 //    }
+//    val test = viewmodel.getAllRecipes().collectAsState(emptyList()).value
+//    Log.i("Pager", test.toString())
 
     // Horizontal pager with 2 pages (Gallary view & full (single) image view)
     HorizontalPager(

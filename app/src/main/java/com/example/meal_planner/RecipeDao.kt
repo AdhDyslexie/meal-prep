@@ -1,17 +1,16 @@
 package com.example.meal_planner
 
-import androidx.room3.Dao
-import androidx.room3.Insert
-import androidx.room3.OnConflictStrategy
-import androidx.room3.Query
-import androidx.room3.Transaction
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipeDao {
 
     // --- Inserts ---
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipe(recipe: Recipe): Long
 
@@ -25,9 +24,6 @@ interface RecipeDao {
     suspend fun insertScheduledRecipe(scheduledRecipe: ScheduledRecipe): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertImage(image: Image): Long
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipeTag(recipeTag: RecipeTag)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -37,7 +33,7 @@ interface RecipeDao {
 
     @Transaction
     @Query("SELECT * FROM Recipe")
-    fun getAllRecipesWithDetails(): Flow<List<RecipeWithDetails>>
+    fun getAllRecipesWithDetails(): Flow<List<Recipe>>
 
     @Transaction
     @Query("SELECT * FROM Recipe WHERE isSaved = 1")
@@ -66,9 +62,6 @@ interface RecipeDao {
     @Transaction
     @Query("SELECT * FROM RecipeIngredient")
     fun getAllRecipeIngredientsWithDetail(): Flow<List<RecipeIngredientWithDetail>>
-
-    @Query("SELECT * FROM Image WHERE recipeId = :recipeId")
-    fun getImagesForRecipe(recipeId: Int): Flow<List<Image>>
 
     // --- Updates ---
 
