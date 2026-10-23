@@ -26,13 +26,8 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipeIngredient(recipeIngredient: RecipeIngredient)
 
-/*    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertScheduledRecipe(scheduledRecipe: ScheduledRecipe): Long
-
-
-
-
-    */
 
     // --- Relation Queries ---
 

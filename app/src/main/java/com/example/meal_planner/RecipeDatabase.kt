@@ -11,6 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import java.time.LocalDateTime
 
 @Database(
@@ -20,7 +21,7 @@ import java.time.LocalDateTime
         RecipeTag::class,
         Ingredient::class,
         RecipeIngredient::class,
-//        ScheduledRecipe::class
+        ScheduledRecipe::class
     ],
     version = 1
 )
@@ -109,6 +110,11 @@ abstract class RecipeDatabase : RoomDatabase() {
                 quantity = 100f, unit = "grams"))
             dao.insertRecipeIngredient(RecipeIngredient(recipeId = recipe1, ingredientId = ing6,
                 quantity = 100f, unit = "grams"))
+
+            // Seed Recipe Schedule
+            dao.insertScheduledRecipe(ScheduledRecipe(date=LocalDate(2026, 10, 24), mealType = MealType.DINNER,
+                hasCooked = false, recipeId = recipe1)
+            )
 
             Log.i("RecipeDatabase", "Database seeding completed successfully!")
         }

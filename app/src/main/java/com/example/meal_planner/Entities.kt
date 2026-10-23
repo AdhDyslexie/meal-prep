@@ -88,7 +88,7 @@ data class RecipeIngredient(
     val unit: String
 )
 
-/*
+
 @Entity(
     foreignKeys = [
         ForeignKey(
@@ -103,8 +103,8 @@ data class RecipeIngredient(
 @Serializable
 data class ScheduledRecipe(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val date: String, // Store as: YYYY-MM-DD
+    val date: LocalDate, // Store in string format: YYYY-MM-DD
     val mealType: MealType,
     val hasCooked: Boolean,
     val recipeId: Int
-)*/
+)
