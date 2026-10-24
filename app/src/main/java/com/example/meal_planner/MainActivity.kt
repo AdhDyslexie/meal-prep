@@ -34,7 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.room.util.query
 import com.example.meal_planner.ui.theme.MealplannerTheme
+import kotlinx.coroutines.flow.collectLatest
 
 /*
 FUCK ANDROID DATABASES!
@@ -81,6 +83,8 @@ fun Pager(modifier: Modifier, viewmodel: RecipeViewModel) {
     val test = viewmodel.getAllRecipes().collectAsState(emptyList()).value
     Log.i("Pager", test.toString())
 
+    DBTest(viewmodel)
+
     // Horizontal pager with 2 pages (Gallary view & full (single) image view)
     HorizontalPager(
         state = pagerState,
@@ -93,6 +97,86 @@ fun Pager(modifier: Modifier, viewmodel: RecipeViewModel) {
             2 -> ShoppingListPage(modifier)
         }
     }
+}
+
+@Composable
+fun DBTest(viewmodel: RecipeViewModel) {
+
+    // Query tests
+
+    val recipeList = viewmodel.getAllRecipesWithDetails().collectAsState(emptyList()).value
+    Log.i("Pager", "Size of recipeList: " + recipeList.size.toString())
+
+    val recipe = recipeList.firstOrNull()
+    recipe?.let { // needed because of recompilation
+        val recipe = it.toRecipeInfo()
+        Log.i("Pager", recipe.toString())
+    }
+
+    val initSchedule = viewmodel.getAllScheduledInfo().collectAsState(emptyList()).value
+    Log.i("Pager", "Size of initSchedule: " + initSchedule.size.toString())
+
+    val schedule = initSchedule.firstOrNull()
+    schedule?.let {
+        val schedule = it.toScheduledRecipeInfo()
+        Log.i("Pager", "Scheduled Recipe Info:\n${schedule.toString()}")
+    }
+
+    val initTags = viewmodel.getAllTags().collectAsState(emptyList()).value
+    Log.i("Pager", "Size of initTags: " + initTags.size.toString())
+
+    initTags.let {
+        Log.i("Pager", "All tags:\n")
+        for(i in it) {
+            Log.i("Pager", "\t" + i.name)
+        }
+    }
+
+    val initIngredient = viewmodel.getAllIngredients().collectAsState(emptyList()).value
+    Log.i("Pager", "Size of initIngredient: " + initIngredient.size.toString())
+
+    initIngredient.let {
+        Log.i("Pager", "All initIngredient:\n")
+        for(i in it) {
+            Log.i("Pager", "\t" + i.name)
+        }
+    }
+
+    val firstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
+    firstRecipe?.let {
+        val recipeInfo = it.toRecipeInfo()
+        Log.i("Pager", "First Recipe:\n\t $recipeInfo")
+    }
+
+    val firstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
+    firstSchedule?.let {
+        val schedule = it.toScheduledRecipeInfo()
+        Log.i("Pager", "First Recipe:\n\t $schedule")
+    }
+
+    // Update tests
+
+    firstRecipe?.let {
+        val recipeInfo = it.toRecipeInfo()
+        viewmodel.updateRecipeSavedState(recipeInfo.id, true)
+    }
+
+    val newFirstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
+    firstRecipe?.let {
+        val recipeInfo = it.toRecipeInfo()
+        Log.i("Pager", "First Recipe save state = \n\t ${recipeInfo.isSaved}")
+    }
+
+    firstSchedule?.let {
+        val schedule = it.toScheduledRecipeInfo()
+        viewmodel.updateRecipeCookedSate(schedule.id, false)
+    }
+    val newFirstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
+    newFirstSchedule?.let {
+        val schedule = it.toScheduledRecipeInfo()
+        Log.i("Pager", "First Schedule has cooked = \n\t ${schedule.haveCooked}")
+    }
+
 }
 
 @Composable

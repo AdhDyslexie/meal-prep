@@ -6,38 +6,6 @@ import androidx.room.Relation
 import java.time.LocalDateTime
 import kotlinx.datetime.LocalDate
 
-/* Class Diagram
-class RecipeInfo {
-	~id: int
-	~name: String
-	~description: String
-	~ingredientsInfo: List~ingredientsInfo~
-	~instruction: List~String~
-	~tags: List~String~
-	~prepTime: float
-	~cookTime: float
-	~imagePath: String
-	~isSaved: bool
-}
-
-class ScheduledRecipeInfo {
-	~id: int
-	~date: Date
-	~mealType: String
-	~haveCooked: bool
-	~RecipeInfo recipeInfo
-}
-
-class IngredientsInfo {
-	~id: int
-	~name: String
-	~quantity: float
-	~unit: String
-}
-
-ScheduledRecipeInfo ..> RecipeInfo : Needs
-RecipeInfo ..> IngredientsInfo : Needs
-*/
 
 data class RecipeInfo(
     val id: Int,
@@ -61,7 +29,7 @@ data class IngredientsInfo(
 
 data class ScheduledRecipeInfo(
     val id: Int,
-    val date: String, // Store as YYYY-MM-DD
+    val date: LocalDate, // Store as YYYY-MM-DD
     val mealType: String,
     val haveCooked: Boolean,
     val recipeInfo: RecipeInfo
@@ -69,7 +37,7 @@ data class ScheduledRecipeInfo(
 
 // --- Room Relation Classes for Querying Composite Data ---
 
-/*
+
 data class RecipeIngredientWithDetail(
     @Embedded val recipeIngredient: RecipeIngredient,
     @Relation(
@@ -78,9 +46,9 @@ data class RecipeIngredientWithDetail(
     )
     val ingredient: Ingredient
 )
-*/
 
-/*data class RecipeWithDetails(
+
+data class RecipeWithDetails(
     @Embedded val recipe: Recipe,
 
     @Relation(
@@ -100,9 +68,9 @@ data class RecipeIngredientWithDetail(
         )
     )
     val tags: List<Tag>,
-)*/
+)
 
-/*
+
 data class ScheduledRecipeWithDetails(
     @Embedded val scheduledRecipe: ScheduledRecipe,
 
@@ -145,4 +113,4 @@ fun ScheduledRecipeWithDetails.toScheduledRecipeInfo(): ScheduledRecipeInfo {
         haveCooked = scheduledRecipe.hasCooked,
         recipeInfo = recipeWithDetails.toRecipeInfo()
     )
-}*/
+}
