@@ -8,20 +8,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +37,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -92,9 +101,9 @@ fun Pager(modifier: Modifier, viewmodel: RecipeViewModel) {
         userScrollEnabled = true
     ) { page ->
         when (page) {
-            0 -> HomePage(modifier)
-            1 -> RecipePage(modifier)
-            2 -> ShoppingListPage(modifier)
+            0 -> HomePage(modifier, viewmodel)
+            1 -> RecipePage(modifier, viewmodel)
+            2 -> ShoppingListPage(modifier, viewmodel)
         }
     }
 }
@@ -194,7 +203,7 @@ fun BottomNavBar() {
 }
 
 @Composable
-fun HomePage(modifier: Modifier = Modifier) {
+fun HomePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Home Page", fontSize = 30.sp)
         for(i in 0..7) {
@@ -204,15 +213,42 @@ fun HomePage(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RecipePage(modifier: Modifier = Modifier) {
+fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Recipe Page", fontSize = 30.sp)
-        RecipeDetials();
+        Row(modifier = Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = {/*TODO: List All Recipes*/}) { Text("All Recipes") }
+            Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Saved Recipes") }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = {/*TODO: List All Recipes*/}) { Text("Category") }
+            Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Filter By") }
+            Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Sort By") }
+        }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(
+                count = 15
+            ) { index ->
+                /*ImageItem(
+                    index = index,
+                    viewModel = viewModel,
+                    onClick = onImageSelected,
+                    modifier = Modifier.animateItem()
+                )*/
+                RecipeCard()
+            }
+        }
     }
 }
 
 @Composable
-fun ShoppingListPage(modifier: Modifier = Modifier) {
+fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Shopping List Page", fontSize = 30.sp)
     }
@@ -262,6 +298,69 @@ fun MealButton(name: String, onClick: () -> Unit) {
 
 @Composable
 fun RecipeCard() {
+    /*
+    Needs a:
+    - Constrained box
+    - Title
+    - Image (when added)
+    - Button (transparent) that fills the whole box
+    */
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .aspectRatio(1.3f)
+            .background(Color.LightGray)
+//            .graphicsLayer { rotationY = angle; clip = false },
+    ) {
+        // box constraints
+        val width = constraints.maxWidth
+        val height = constraints.maxHeight
+
+//        val bitmap = remember { mutableStateOf<Bitmap?>(null) }
+       /* LaunchedEffect(index, width, height) {
+            bitmap.value = viewModel.loadScaledImage(contentResolver, index, width, height)
+        }*/
+//        if (bitmap.value != null) {
+//            Image(
+//                bitmap.value!!.asImageBitmap(),
+//                contentDescription = "",
+//                contentScale = ContentScale.Crop,
+//                modifier = Modifier.fillMaxSize()
+//            )
+        Text(text = "<Recipe Title>", fontSize = 20.sp)
+
+        Button(
+            onClick = {
+                /*  if (index < viewModel.imageList.size) {
+                       viewModel.currentImage = viewModel.imageList[index]
+                       viewModel.currentImageIdx = index
+                       onClick()
+                       coroutineScope.launch {
+                           pagerState.animateScrollToPage(1)
+                       }
+                   }*/
+            // TODO: Open RecipeDetials()
+            },
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxSize(),
+            content = { Text(text = "") },
+            shape = RoundedCornerShape(0.dp),
+            colors = ButtonColors(
+                Color.Transparent,
+                Color.Transparent,
+                Color.Transparent,
+                Color.Transparent
+            )
+        )
+//        } else {
+//            Text(
+//                text = "Loading image...",
+//                modifier = Modifier.align(Alignment.Center)
+//            )
+//        }
+    }
 
 }
 
