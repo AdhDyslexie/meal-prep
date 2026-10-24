@@ -155,28 +155,30 @@ fun DBTest(viewmodel: RecipeViewModel) {
     }
 
     // Update tests
+    val test = false
+    if(test) {
 
-    firstRecipe?.let {
-        val recipeInfo = it.toRecipeInfo()
-        viewmodel.updateRecipeSavedState(recipeInfo.id, true)
-    }
+        firstRecipe?.let {
+            val recipeInfo = it.toRecipeInfo()
+            viewmodel.updateRecipeSavedState(recipeInfo.id, true)
+        }
 
-    val newFirstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
-    firstRecipe?.let {
-        val recipeInfo = it.toRecipeInfo()
-        Log.i("Pager", "First Recipe save state = \n\t ${recipeInfo.isSaved}")
-    }
+        val newFirstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
+        firstRecipe?.let {
+            val recipeInfo = it.toRecipeInfo()
+            Log.i("Pager", "First Recipe save state = \n\t ${recipeInfo.isSaved}")
+        }
 
-    firstSchedule?.let {
-        val schedule = it.toScheduledRecipeInfo()
-        viewmodel.updateRecipeCookedSate(schedule.id, false)
+        firstSchedule?.let {
+            val schedule = it.toScheduledRecipeInfo()
+            viewmodel.updateRecipeCookedSate(schedule.id, false)
+        }
+        val newFirstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
+        newFirstSchedule?.let {
+            val schedule = it.toScheduledRecipeInfo()
+            Log.i("Pager", "First Schedule has cooked = \n\t ${schedule.haveCooked}")
+        }
     }
-    val newFirstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
-    newFirstSchedule?.let {
-        val schedule = it.toScheduledRecipeInfo()
-        Log.i("Pager", "First Schedule has cooked = \n\t ${schedule.haveCooked}")
-    }
-
 }
 
 @Composable
