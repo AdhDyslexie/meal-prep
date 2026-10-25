@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,7 +33,6 @@ import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,6 +53,9 @@ import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.grid.items
+import kotlinx.datetime.*
+import java.time.format.DateTimeFormatter
+import kotlin.time.Clock
 
 /*
 FUCK ANDROID DATABASES!
@@ -232,14 +232,40 @@ fun BottomNavBar(onPageSelected: (Int) -> Unit) {
 
 @Composable
 fun SchedulePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Home Page", fontSize = 30.sp)
-        for(i in 0..7) {
-            ScheduleCard()
+    // Get current week days (Mon - Sun)
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+    val weekDays = remember(today) { getWeekDaysFor(today) }
+
+    // Extract LocalDate from weekDays & retrieve recipe schedule
+    val weekDates = remember(weekDays) { weekDays.map {it.date}.toSet() }
+    val rawSchedule = viewmodel.getAllScheduledInfo().collectAsState(emptyList()).value
+
+    val filteredSchedule = remember(rawSchedule, weekDates) {
+        rawSchedule
+            .map { it.toScheduledRecipeInfo() }
+            .filter { it.date in weekDates }
+    }
+    val scheduleByDate = remember(filteredSchedule) {
+        filteredSchedule.groupBy { it.date }
+    }
+    Log.i("DateTest", "Filtered Schedule: $scheduleByDate")
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Schedule Page", fontSize = 30.sp)
+
+        // Display a ScheduleCard for each day of the week
+        weekDays.forEach { dayCell ->
+            ScheduleCard(
+                dayOfWeek = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("EEE")), // e.g. Sun
+                dateText = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMM d")), // e.g. Oct 25
+                scheduledMeals = scheduleByDate[dayCell.date] ?: emptyList()
+            )
         }
     }
 }
-
 
 
 @Composable
@@ -378,6 +404,144 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
 }
 
 @Composable
+fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Shopping List Page", fontSize = 30.sp)
+    }
+}
+
+@Composable
+fun ScheduleCard(dayOfWeek: String, dateText: String, scheduledMeals: List<ScheduledRecipeInfo> = emptyList()) {
+    /*
+    - Day of week should be queried & then displays
+    - Date should be queried & then displayed
+    - Buttons should open an overlay with the meals details that was assigned to it
+        - Details collected from a database
+    - If nothing is assigned to a button its state should be set to hidden
+    */
+
+    // Find scheduled meal for each meal type on this day
+    val breakfast = scheduledMeals.find { it.mealType.equals("BREAKFAST", ignoreCase = true) }
+    val lunch = scheduledMeals.find { it.mealType.equals("LUNCH", ignoreCase = true) }
+    val dinner = scheduledMeals.find { it.mealType.equals("DINNER", ignoreCase = true) }
+
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(10.dp)
+        .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween)
+    {
+        Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.Start) {
+            Text(text = dayOfWeek, fontSize = 20.sp, fontWeight = FontWeight.Bold) // Display DoW
+            Text(text = dateText, fontSize = 18.sp) // Display the date of the meal
+        }
+        ScheduleButton(
+            name = "Breakfast",
+            onClick = { Log.i("ScheduleCard", "Breakfast clicked: ${breakfast?.recipeInfo?.name}") },
+            isScheduled = breakfast != null
+        )
+        ScheduleButton(
+            name = "Lunch",
+            onClick = { Log.i("ScheduleCard", "Lunch clicked: ${lunch?.recipeInfo?.name}") },
+            isScheduled = lunch != null
+        )
+        ScheduleButton(
+            name = "Dinner",
+            onClick = { Log.i("ScheduleCard", "Dinner clicked: ${dinner?.recipeInfo?.name}") },
+            isScheduled = dinner != null
+        )
+    }
+}
+
+@Composable
+fun ScheduleButton(name: String, onClick: () -> Unit, isScheduled: Boolean = false) {
+    Button(
+        enabled = true, // get from state variable
+        modifier = Modifier
+            .padding(10.dp)
+            .size(86.dp, 54.dp),
+        colors = if (isScheduled) buttonColors(Color.Cyan) else buttonColors(Color.LightGray),
+        contentPadding = PaddingValues(10.dp),
+        shape = RoundedCornerShape(10.dp),
+        onClick = onClick)
+    {
+        Text(name)
+    }
+}
+
+@Composable
+fun RecipeCard(recipeInfo: RecipeInfo) {
+    /*
+    Needs a:
+    - Constrained box
+    - Title
+    - Image (when added)
+    - Button (transparent) that fills the whole box
+    */
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .aspectRatio(1.3f)
+            .background(Color.LightGray, shape = RoundedCornerShape(10.dp))
+            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+        ,
+        contentAlignment = Alignment.TopCenter
+//            .graphicsLayer { rotationY = angle; clip = false },
+    ) {
+        // box constraints
+        val width = constraints.maxWidth
+        val height = constraints.maxHeight
+
+//        val bitmap = remember { mutableStateOf<Bitmap?>(null) }
+       /* LaunchedEffect(index, width, height) {
+            bitmap.value = viewModel.loadScaledImage(contentResolver, index, width, height)
+        }*/
+//        if (bitmap.value != null) {
+//            Image(
+//                bitmap.value!!.asImageBitmap(),
+//                contentDescription = "",
+//                contentScale = ContentScale.Crop,
+//                modifier = Modifier.fillMaxSize()
+//            )
+        Text(text = recipeInfo.name, fontSize = 16.sp)
+
+        Button(
+            shape = RoundedCornerShape(10.dp),
+            onClick = {
+                /*  if (index < viewModel.imageList.size) {
+                       viewModel.currentImage = viewModel.imageList[index]
+                       viewModel.currentImageIdx = index
+                       onClick()
+                       coroutineScope.launch {
+                           pagerState.animateScrollToPage(1)
+                       }
+                   }*/
+                // TODO: Open RecipeDetials()
+            },
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxSize(),
+
+            content = { Text(text = "") },
+            colors = ButtonColors(
+                Color.Transparent,
+                Color.Transparent,
+                Color.Transparent,
+                Color.Transparent
+            )
+        )
+//        } else {
+//            Text(
+//                text = "Loading image...",
+//                modifier = Modifier.align(Alignment.Center)
+//            )
+//        }
+    }
+}
+
+@Composable
 fun SingleSelectDropdown(
     label: String,
     options: List<String>,
@@ -456,126 +620,6 @@ fun MultiSelectDropdown(
     }
 }
 
-@Composable
-fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Shopping List Page", fontSize = 30.sp)
-    }
-}
-
-@Composable
-fun ScheduleCard() {
-    /*
-    - Day of week should be queried & then displays
-    - Date should be queried & then displayed
-    - Buttons should open an overlay with the meals details that was assigned to it
-        - Details collected from a database
-    - If nothing is assigned to a button its state should be set to hidden
-    */
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(10.dp)
-        .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween)
-    {
-        Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.Start) {
-            Text(text = "Thu", fontSize = 20.sp, fontWeight = FontWeight.Bold) // Display DoW
-            Text(text = "Oct 15", fontSize = 18.sp) // Display the date of the meal
-        }
-        ScheduleButton("Breakfast", { Log.i("MealCard", "Breakfast Btn") })
-        ScheduleButton("Lunch", { Log.i("MealCard", "Lunch Btn") });
-        ScheduleButton("Dinner", { Log.i("MealCard", "Dinner Btn") });
-    }
-}
-
-@Composable
-fun ScheduleButton(name: String, onClick: () -> Unit) {
-    Button(
-        enabled = true, // get from state variable
-        modifier = Modifier
-            .padding(10.dp)
-            .size(86.dp, 54.dp),
-//        colors = buttonColors(Color.Blue),
-        contentPadding = PaddingValues(10.dp),
-        shape = RoundedCornerShape(10.dp),
-        onClick = onClick)
-    {
-        Text(name)
-    }
-}
-
-@Composable
-fun RecipeCard(recipeInfo: RecipeInfo) {
-    /*
-    Needs a:
-    - Constrained box
-    - Title
-    - Image (when added)
-    - Button (transparent) that fills the whole box
-    */
-
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .aspectRatio(1.3f)
-            .background(Color.LightGray, shape = RoundedCornerShape(10.dp))
-            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
-        ,
-        contentAlignment = Alignment.TopCenter
-//            .graphicsLayer { rotationY = angle; clip = false },
-    ) {
-        // box constraints
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
-
-//        val bitmap = remember { mutableStateOf<Bitmap?>(null) }
-       /* LaunchedEffect(index, width, height) {
-            bitmap.value = viewModel.loadScaledImage(contentResolver, index, width, height)
-        }*/
-//        if (bitmap.value != null) {
-//            Image(
-//                bitmap.value!!.asImageBitmap(),
-//                contentDescription = "",
-//                contentScale = ContentScale.Crop,
-//                modifier = Modifier.fillMaxSize()
-//            )
-        Text(text = recipeInfo.name, fontSize = 16.sp)
-
-        Button(
-            shape = RoundedCornerShape(10.dp),
-            onClick = {
-                /*  if (index < viewModel.imageList.size) {
-                       viewModel.currentImage = viewModel.imageList[index]
-                       viewModel.currentImageIdx = index
-                       onClick()
-                       coroutineScope.launch {
-                           pagerState.animateScrollToPage(1)
-                       }
-                   }*/
-                // TODO: Open RecipeDetials()
-            },
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxSize(),
-
-            content = { Text(text = "") },
-            colors = ButtonColors(
-                Color.Transparent,
-                Color.Transparent,
-                Color.Transparent,
-                Color.Transparent
-            )
-        )
-//        } else {
-//            Text(
-//                text = "Loading image...",
-//                modifier = Modifier.align(Alignment.Center)
-//            )
-//        }
-    }
-
-}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -607,5 +651,31 @@ fun RecipeDetials() {
             Text("2. Instruction")
             Text("3. Instruction")
         }
+    }
+}
+
+data class DayCellInfo(
+    val date: LocalDate,
+    val month: Month,
+    val dayOfMonth: Int,
+    val dayOfWeek: DayOfWeek
+)
+
+fun getWeekDaysFor(targetDate: LocalDate): List<DayCellInfo> {
+    // 1. Find the offset from Monday (ISO day number: Monday = 1, Sunday = 7)
+    val daysFromMonday = targetDate.dayOfWeek.isoDayNumber - 1
+
+    // 2. Subtract those days to land precisely on Monday of this week
+    val monday = targetDate.minus(daysFromMonday, DateTimeUnit.DAY)
+
+    // 3. Loop through 0 to 6 to generate Monday through Sunday
+    return (0..6).map { offset ->
+        val currentDay = monday.plus(offset, DateTimeUnit.DAY)
+        DayCellInfo(
+            date = currentDay,
+            month = currentDay.month,
+            dayOfMonth = currentDay.dayOfMonth,
+            dayOfWeek = currentDay.dayOfWeek
+        )
     }
 }
