@@ -17,7 +17,8 @@ data class RecipeInfo(
     val prepTime: Float,
     val cookTime: Float,
     val image: String = "",
-    val isSaved: Boolean
+    val isSaved: Boolean,
+    val mealType: String
 )
 
 data class IngredientsInfo(
@@ -101,7 +102,8 @@ fun RecipeWithDetails.toRecipeInfo(): RecipeInfo {
         tags = tags.map { it.name },
         prepTime = recipe.prepTimeMinutes.toFloat(),
         cookTime = recipe.cookTimeMinutes.toFloat(),
-        isSaved = recipe.isSaved
+        isSaved = recipe.isSaved,
+        mealType = recipe.mealType.name
     )
 }
 
