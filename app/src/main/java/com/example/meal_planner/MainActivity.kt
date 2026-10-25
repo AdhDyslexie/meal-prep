@@ -2,6 +2,7 @@ package com.example.meal_planner
 
 import android.os.Bundle
 import android.util.Log
+import android.util.MutableBoolean
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,12 +27,19 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -227,34 +235,72 @@ fun HomePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
 
 @Composable
 fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
+    var changeRecipeList by remember { mutableIntStateOf(0) }
+
+    val recipesFlow = remember(changeRecipeList, viewmodel) {
+        if (changeRecipeList == 0) {
+            viewmodel.getAllRecipesWithDetails()
+        } else {
+            viewmodel.getAllSavedRecipes()
+        }
+    }
+
+    val allRecipes = recipesFlow.collectAsState(initial = emptyList()).value
+
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Recipe Page", fontSize = 30.sp)
-        Row(modifier = Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically
+
+        // Select All or Saved recipes
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(5.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = {/*TODO: List All Recipes*/}) { Text("All Recipes") }
-            Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Saved Recipes") }
+            Button(
+                onClick = { changeRecipeList = 0 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (changeRecipeList == 0) Color.Blue else Color.Gray
+                )
+            ) {
+                Text("All Recipes")
+            }
+
+            Button(
+                onClick = { changeRecipeList = 1 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (changeRecipeList == 1) Color.Blue else Color.Gray
+                )
+            ) {
+                Text("Saved Recipes")
+            }
         }
+
+        // Filter Options
         Row(modifier = Modifier.fillMaxWidth().padding(5.dp), verticalAlignment = Alignment.CenterVertically
         ) {
             Button(onClick = {/*TODO: List All Recipes*/}) { Text("Category") }
             Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Filter By") }
             Button(onClick = {/*TODO: List All Saved Recipes*/}) { Text("Sort By") }
         }
+
+        // Display Recipe Grid
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(
-                count = 15
-            ) { index ->
-                /*ImageItem(
-                    index = index,
-                    viewModel = viewModel,
-                    onClick = onImageSelected,
-                    modifier = Modifier.animateItem()
-                )*/
-                RecipeCard()
+
+            allRecipes.let {
+                items(
+                    count = it.size
+                ) { index ->
+                    /*ImageItem(
+                        index = index,
+                        viewModel = viewModel,
+                        onClick = onImageSelected,
+                        modifier = Modifier.animateItem()
+                    )*/
+                    RecipeCard(it[index].toRecipeInfo())
+                }
             }
         }
     }
@@ -310,7 +356,7 @@ fun MealButton(name: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun RecipeCard() {
+fun RecipeCard(recipeInfo: RecipeInfo) {
     /*
     Needs a:
     - Constrained box
@@ -323,7 +369,8 @@ fun RecipeCard() {
         modifier = Modifier
             .fillMaxSize()
             .aspectRatio(1.3f)
-            .background(Color.LightGray)
+            .background(Color.LightGray),
+        contentAlignment = Alignment.TopCenter
 //            .graphicsLayer { rotationY = angle; clip = false },
     ) {
         // box constraints
@@ -341,7 +388,7 @@ fun RecipeCard() {
 //                contentScale = ContentScale.Crop,
 //                modifier = Modifier.fillMaxSize()
 //            )
-        Text(text = "<Recipe Title>", fontSize = 20.sp)
+        Text(text = recipeInfo.name, fontSize = 16.sp)
 
         Button(
             onClick = {
