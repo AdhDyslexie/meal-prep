@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import java.time.LocalDateTime
 
 @Suppress("UNCHECKED_CAST")
@@ -43,6 +44,24 @@ class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
     override fun getRecipeInfo(id: Int) = mDao.getRecipeWithDetailsById(id)
 
     override fun getScheduledInfo(id: Int) = mDao.getScheduledWithDetailsById(id)
+
+    override fun newSchedule(
+        date: LocalDate,
+        mealType: MealType,
+        recipeId: Int,
+        haveCooked: Boolean
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            mDao.insertScheduledRecipe(
+                ScheduledRecipe(
+                    date = date,
+                    mealType = mealType,
+                    hasCooked = false,
+                    recipeId = recipeId
+                )
+            )
+        }
+    }
 
     override fun updateRecipeSavedState(recipeId: Int, isSaved: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {

@@ -68,7 +68,8 @@ import androidx.compose.material3.Surface
 import kotlinx.datetime.*
 import java.time.format.DateTimeFormatter
 import kotlin.time.Clock
-
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 /*
 FUCK ANDROID DATABASES!
 THREE FUCKING DAYS WASTED TRYING TO GET THIS SHIT TO WORK!
@@ -92,14 +93,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(viewModel: RecipeViewModel) {
-    // 1. Remember PagerState and CoroutineScope at the root UI level
+    // Remember PagerState and CoroutineScope at the root UI level
     val pagerState = rememberPagerState(pageCount = { 3 }, initialPage = 0)
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            // 2. Pass navigation callbacks down to BottomNavBar
+            // Pass navigation callbacks down to BottomNavBar
             BottomNavBar(
                 onPageSelected = { pageIndex: Int ->
                     coroutineScope.launch {
@@ -109,7 +110,7 @@ fun MainScreen(viewModel: RecipeViewModel) {
             )
         }
     ) { innerPadding ->
-        // 3. Pass pagerState down to Pager
+        // Pass pagerState down to Pager
         Pager(
             modifier = Modifier.padding(innerPadding),
             pagerState = pagerState,
@@ -243,38 +244,72 @@ fun BottomNavBar(onPageSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun SchedulePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
-    // Get current week days (Mon - Sun)
+fun SchedulePage(
+    modifier: Modifier = Modifier,
+    viewmodel: RecipeViewModel
+) {
+    // Current week dates & queries
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     val weekDays = remember(today) { getWeekDaysFor(today) }
-
-    // Extract LocalDate from weekDays & retrieve recipe schedule
     val weekDates = remember(weekDays) { weekDays.map {it.date}.toSet() }
     val rawSchedule = viewmodel.getAllScheduledInfo().collectAsState(emptyList()).value
-
     val filteredSchedule = remember(rawSchedule, weekDates) {
-        rawSchedule
-            .map { it.toScheduledRecipeInfo() }
-            .filter { it.date in weekDates }
+        rawSchedule.map { it.toScheduledRecipeInfo() }.filter { it.date in weekDates }
     }
     val scheduleByDate = remember(filteredSchedule) {
         filteredSchedule.groupBy { it.date }
     }
-    Log.i("DateTest", "Filtered Schedule: $scheduleByDate")
+    var selectedRecipe by remember { mutableStateOf<RecipeInfo?>(null) }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "Schedule Page", fontSize = 30.sp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = "Schedule Page", fontSize = 30.sp)
 
-        // Display a ScheduleCard for each day of the week
-        weekDays.forEach { dayCell ->
-            ScheduleCard(
-                dayOfWeek = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("EEE")), // e.g. Sun
-                dateText = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMM d")), // e.g. Oct 25
-                scheduledMeals = scheduleByDate[dayCell.date] ?: emptyList()
+            // Display a ScheduleCard for each day of the week
+            weekDays.forEach { dayCell ->
+                ScheduleCard(
+                    dayOfWeek = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("EEE")), // e.g. Sun
+                    dateText = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMM d")), // e.g. Oct 25
+                    scheduledMeals = scheduleByDate[dayCell.date] ?: emptyList(),
+                    onMealClick = { recipeInfo -> selectedRecipe = recipeInfo }
+                )
+            }
+        }
+        // Overlay for schedule page
+        val isExpanded = selectedRecipe != null
+
+        if (isExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable { selectedRecipe = null }
             )
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            modifier = Modifier.align(Alignment.Center),
+            enter = fadeIn() + scaleIn(initialScale = 0.8f),
+            exit = fadeOut() + scaleOut(targetScale = 0.8f)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .fillMaxHeight(0.85f),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                RecipeDetails(
+                    recipeInfo = selectedRecipe,
+                    showActionButtons = false, // Hides Save & Cook buttons
+                    onClose = { selectedRecipe = null }
+                )
+            }
         }
     }
 }
@@ -324,7 +359,7 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
             "Time to cook (Q-L)" -> list = list.sortedBy { it.prepTime + it.cookTime }
         }
 
-        list
+        list // the return
     }
 
     var selectedRecipe by remember { mutableStateOf<RecipeInfo?>(null) }
@@ -461,6 +496,11 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
                             viewmodel.updateRecipeSavedState(recipe.id, isSaved)
                         }
                     },
+                    onScheduleCook = { date, mealType ->
+                        selectedRecipe?.let { recipe ->
+                            viewmodel.newSchedule(date, mealType, recipe.id)
+                        }
+                    },
                     onClose = { selectedRecipe = null }
                 )
             }
@@ -469,14 +509,22 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
 }
 
 @Composable
-fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
+fun ShoppingListPage(
+    modifier: Modifier = Modifier,
+    viewmodel: RecipeViewModel
+) {
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = "Shopping List Page", fontSize = 30.sp)
     }
 }
 
 @Composable
-fun ScheduleCard(dayOfWeek: String, dateText: String, scheduledMeals: List<ScheduledRecipeInfo> = emptyList()) {
+fun ScheduleCard(
+    dayOfWeek: String,
+    dateText: String,
+    scheduledMeals: List<ScheduledRecipeInfo> = emptyList(),
+    onMealClick: (RecipeInfo) -> Unit = {}
+) {
     /*
     TODO:
     - Highlight the border of today's meals
@@ -501,17 +549,17 @@ fun ScheduleCard(dayOfWeek: String, dateText: String, scheduledMeals: List<Sched
         }
         ScheduleButton(
             name = "Breakfast",
-            onClick = { Log.i("ScheduleCard", "Breakfast clicked: ${breakfast?.recipeInfo?.name}") },
+            onClick = { breakfast?.recipeInfo?.let { onMealClick(it) } },
             isScheduled = breakfast != null
         )
         ScheduleButton(
             name = "Lunch",
-            onClick = { Log.i("ScheduleCard", "Lunch clicked: ${lunch?.recipeInfo?.name}") },
+            onClick = { lunch?.recipeInfo?.let { onMealClick(it) } },
             isScheduled = lunch != null
         )
         ScheduleButton(
             name = "Dinner",
-            onClick = { Log.i("ScheduleCard", "Dinner clicked: ${dinner?.recipeInfo?.name}") },
+            onClick = { dinner?.recipeInfo?.let { onMealClick(it) } },
             isScheduled = dinner != null
         )
     }
@@ -665,16 +713,16 @@ fun MultiSelectDropdown(
 
 
 @Composable
-fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit, onToggleSave: (Boolean) -> Unit) {
-    /*
-     - Details should be an overlay, with dynamic content
-     - Should grow into place when opened
-     - Should shrink into place when closed
-    */
-
+fun RecipeDetails(
+    recipeInfo: RecipeInfo?,
+    onClose: () -> Unit,
+    showActionButtons: Boolean = true,
+    onToggleSave: (Boolean) -> Unit = {},
+    onScheduleCook: (LocalDate, MealType) -> Unit = { _, _ -> }
+) {
     val scrollState = rememberScrollState()
     var isSaved by remember(recipeInfo) { mutableStateOf(recipeInfo?.isSaved ?: false) }
-
+    var showCookDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -702,28 +750,32 @@ fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit, onToggleSave: (B
         }
 
         // Action buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Save / Saved Toggle Button
-            Button(
-                onClick = {
-                    val newState = !isSaved
-                    isSaved = newState             // Update UI state immediately
-                    onToggleSave(newState)         // Update database
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isSaved) Color.Blue else Color.Gray
-                )
+        if (showActionButtons) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(if (isSaved) "Saved" else "Save")
+                // Save / Saved Toggle Button
+                Button(
+                    onClick = {
+                        val newState = !isSaved
+                        isSaved = newState             // Update UI state immediately
+                        onToggleSave(newState)         // Update database
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSaved) Color.Blue else Color.Gray
+                    )
+                ) {
+                    Text(if (isSaved) "Saved" else "Save")
+                }
+
+                // Cook Button opens Dialog Prompt
+                Button(onClick = { showCookDialog = true }) {
+                    Text("Cook")
+                }
             }
-
-            Button(onClick = { /* Cook action */ }) { Text("Cook") }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
 
         // Ingredients
@@ -760,6 +812,17 @@ fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit, onToggleSave: (B
             }
         }
     }
+    // Show Dialog Prompt when 'Cook' is clicked
+    if (showCookDialog && recipeInfo != null) {
+        ScheduleMealDialog(
+            recipeInfo = recipeInfo,
+            onDismiss = { showCookDialog = false },
+            onConfirm = { date, mealType ->
+                onScheduleCook(date, mealType)
+                showCookDialog = false
+            }
+        )
+    }
 }
 
 data class DayCellInfo(
@@ -768,22 +831,98 @@ data class DayCellInfo(
     val dayOfMonth: Int,
     val dayOfWeek: DayOfWeek
 )
-
 fun getWeekDaysFor(targetDate: LocalDate): List<DayCellInfo> {
-    // 1. Find the offset from Monday (ISO day number: Monday = 1, Sunday = 7)
+    // Find the offset from Monday (ISO day number: Monday = 1, Sunday = 7)
     val daysFromMonday = targetDate.dayOfWeek.isoDayNumber - 1
 
-    // 2. Subtract those days to land precisely on Monday of this week
+    // Subtract those days to land precisely on Monday of this week
     val monday = targetDate.minus(daysFromMonday, DateTimeUnit.DAY)
 
-    // 3. Loop through 0 to 6 to generate Monday through Sunday
+    // Loop through 0 to 6 to generate Monday through Sunday
     return (0..6).map { offset ->
         val currentDay = monday.plus(offset, DateTimeUnit.DAY)
         DayCellInfo(
             date = currentDay,
             month = currentDay.month,
-            dayOfMonth = currentDay.dayOfMonth,
+            dayOfMonth = currentDay.day,
             dayOfWeek = currentDay.dayOfWeek
         )
     }
+}
+
+@Composable
+fun ScheduleMealDialog(
+    recipeInfo: RecipeInfo,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate, MealType) -> Unit
+) {
+    // Default to today's date in YYYY-MM-DD format
+    var dateText by remember {
+        mutableStateOf(Clock.System.todayIn(TimeZone.currentSystemDefault()).toString())
+    }
+    var selectedMealType by remember {
+        mutableStateOf(
+            runCatching { MealType.valueOf(recipeInfo.mealType.uppercase()) }.getOrDefault(MealType.DINNER)
+        )
+    }
+    var isDateError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Schedule ${recipeInfo.name}") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Date Input
+                OutlinedTextField(
+                    value = dateText,
+                    onValueChange = {
+                        dateText = it
+                        isDateError = false
+                    },
+                    label = { Text("Date (YYYY-MM-DD)") },
+                    isError = isDateError,
+                    supportingText = {
+                        if (isDateError) {
+                            Text("Invalid date format. Use YYYY-MM-DD", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Meal Type Dropdown
+                Text("Select Meal Type:", style = MaterialTheme.typography.labelLarge)
+                SingleSelectDropdown(
+                    label = "Meal Type",
+                    options = MealType.entries.map { it.name },
+                    selectedOption = selectedMealType.name,
+                    onOptionSelected = { selectedName ->
+                        selectedMealType = MealType.valueOf(selectedName)
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    try {
+                        val parsedDate = LocalDate.parse(dateText.trim())
+                        onConfirm(parsedDate, selectedMealType)
+                    } catch (e: Exception) {
+                        isDateError = true
+                    }
+                }
+            ) {
+                Text("Schedule")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

@@ -1,7 +1,7 @@
 package com.example.meal_planner
 
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDate
 
 // Method to accesses db from UI
 interface RecipeInterface {
@@ -19,7 +19,7 @@ interface RecipeInterface {
 //    fun newRecipe(name: String, description: String, instructions: List<String>, image: String = "", isSaved: Boolean, time: List<Int>)
 //    fun newTag(name: String, recipe: Recipe)
 //    fun newIngredient(name: String, quantity: Float, unit: String, recipe: Recipe)
-//    fun newSchedule(date: LocalDateTime, mealType: MealType, haveCooked: Boolean, recipe: Recipe)
+    fun newSchedule(date: LocalDate, mealType: MealType, recipeId: Int, haveCooked: Boolean = false)
 
     // --- Deletions ---
 //    fun deleteRecipe(id: Int)
