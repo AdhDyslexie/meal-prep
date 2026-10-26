@@ -56,7 +56,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
@@ -427,10 +426,10 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
             }
         }
 
-        // 1. Track whether the overlay is open or closed
+        // Track whether the overlay is open or closed
         val isExpanded = selectedRecipe != null
 
-        // 2. Background Dimmer
+        // Background Dimmer
         if (isExpanded) {
             Box(
                 modifier = Modifier
@@ -440,7 +439,7 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
             )
         }
 
-        // 3. Animated Grow/Shrink Container
+        // Animated Grow/Shrink Container
         AnimatedVisibility(
             visible = isExpanded,
             modifier = Modifier.align(Alignment.Center),
@@ -457,7 +456,12 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
             ) {
                 RecipeDetails(
                     recipeInfo = selectedRecipe,
-                    onClose = { selectedRecipe = null } // Exit button callback
+                    onToggleSave = { isSaved ->
+                        selectedRecipe?.let { recipe ->
+                            viewmodel.updateRecipeSavedState(recipe.id, isSaved)
+                        }
+                    },
+                    onClose = { selectedRecipe = null }
                 )
             }
         }
@@ -661,7 +665,7 @@ fun MultiSelectDropdown(
 
 
 @Composable
-fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit) {
+fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit, onToggleSave: (Boolean) -> Unit) {
     /*
      - Details should be an overlay, with dynamic content
      - Should grow into place when opened
@@ -669,6 +673,8 @@ fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit) {
     */
 
     val scrollState = rememberScrollState()
+    var isSaved by remember(recipeInfo) { mutableStateOf(recipeInfo?.isSaved ?: false) }
+
 
     Column(
         modifier = Modifier
@@ -701,8 +707,21 @@ fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = { Log.i("RecipeDetails", "Saved") }) { Text("Save") }
-            Button(onClick = { Log.i("RecipeDetails", "To Cook") }) { Text("Cook") }
+            // Save / Saved Toggle Button
+            Button(
+                onClick = {
+                    val newState = !isSaved
+                    isSaved = newState             // Update UI state immediately
+                    onToggleSave(newState)         // Update database
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSaved) Color.Blue else Color.Gray
+                )
+            ) {
+                Text(if (isSaved) "Saved" else "Save")
+            }
+
+            Button(onClick = { /* Cook action */ }) { Text("Cook") }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
