@@ -237,9 +237,18 @@ fun BottomNavBar(onPageSelected: (Int) -> Unit) {
         .fillMaxWidth()
         .padding(15.dp),
         horizontalArrangement = Arrangement.SpaceBetween) {
-        Button(colors = buttonColors(Color.Blue), onClick = { onPageSelected(0) }) { Text("Home") }
-        Button(colors = buttonColors(Color.Red), onClick = { onPageSelected(1) }) { Text("Recipe") }
-        Button(colors = buttonColors(Color.Green), onClick = { onPageSelected(2) }) { Text("S-List") }
+        Button(
+            colors = buttonColors(Color.Blue),
+            onClick = { onPageSelected(0) }
+        ) { Text("Home") }
+        Button(
+            colors = buttonColors(Color.Red),
+            onClick = { onPageSelected(1) }
+        ) { Text("Recipe") }
+        Button(
+            colors = buttonColors(Color.Green),
+            onClick = { onPageSelected(2) }
+        ) { Text("S-List") }
     }
 }
 
@@ -271,6 +280,8 @@ fun SchedulePage(
             // Display a ScheduleCard for each day of the week
             weekDays.forEach { dayCell ->
                 ScheduleCard(
+                    cardDate = dayCell.date,
+                    today = today, // LocalDate(2026, 10, 29), // for testing
                     dayOfWeek = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("EEE")), // e.g. Sun
                     dateText = dayCell.date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("MMM d")), // e.g. Oct 25
                     scheduledMeals = scheduleByDate[dayCell.date] ?: emptyList(),
@@ -520,16 +531,28 @@ fun ShoppingListPage(
 
 @Composable
 fun ScheduleCard(
+    cardDate: LocalDate,
+    today: LocalDate,
     dayOfWeek: String,
     dateText: String,
     scheduledMeals: List<ScheduledRecipeInfo> = emptyList(),
-    onMealClick: (RecipeInfo) -> Unit = {}
+    onMealClick: (RecipeInfo) -> Unit = {},
 ) {
-    /*
-    TODO:
-    - Highlight the border of today's meals
-    - Grey out the days that have past this week
-    */
+
+    // Calculate Today & Past flags
+    val isToday = (cardDate == today)
+    val isPast = (cardDate < today)
+
+    // Dynamic Border: Highlighted for Today, muted for Past/Future
+    val borderColor = when {
+        isToday -> Color.Blue         // Highlighted border for today
+        isPast -> Color.LightGray     // Muted border for past days
+        else -> Color.Black           // Normal border for future days
+    }
+    val borderWidth = if (isToday) 2.dp else 1.dp
+
+    // Dynamic Card Background: Greyed out if past
+    val cardBackground = if (isPast) Color(0xFFF5F5F5) else Color.Transparent
 
     // Find scheduled meal for each meal type on this day
     val breakfast = scheduledMeals.find { it.mealType.equals("BREAKFAST", ignoreCase = true) }
@@ -539,45 +562,77 @@ fun ScheduleCard(
     Row(modifier = Modifier
         .fillMaxWidth()
         .padding(10.dp)
-        .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+        .background(color = cardBackground, shape = RoundedCornerShape(10.dp))
+        .border(
+            width = borderWidth,
+            color = borderColor,
+            shape = RoundedCornerShape(10.dp)
+        ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween)
     {
         Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.Start) {
-            Text(text = dayOfWeek, fontSize = 20.sp, fontWeight = FontWeight.Bold) // Display DoW
-            Text(text = dateText, fontSize = 18.sp) // Display the date of the meal
+            Text( // Display DoW
+                text = dayOfWeek,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isPast) Color.Gray else Color.Unspecified
+            )
+            Text( // Display the date of the meal
+                text = dateText,
+                fontSize = 18.sp,
+                color = if (isPast) Color.Gray else Color.Unspecified
+            )
         }
         ScheduleButton(
             name = "Breakfast",
             onClick = { breakfast?.recipeInfo?.let { onMealClick(it) } },
-            isScheduled = breakfast != null
+            isScheduled = breakfast != null,
+            isPast = isPast
         )
         ScheduleButton(
             name = "Lunch",
             onClick = { lunch?.recipeInfo?.let { onMealClick(it) } },
-            isScheduled = lunch != null
+            isScheduled = lunch != null,
+            isPast = isPast
         )
         ScheduleButton(
             name = "Dinner",
             onClick = { dinner?.recipeInfo?.let { onMealClick(it) } },
-            isScheduled = dinner != null
+            isScheduled = dinner != null,
+            isPast = isPast
         )
     }
 }
 
 @Composable
-fun ScheduleButton(name: String, onClick: () -> Unit, isScheduled: Boolean = false) {
+fun ScheduleButton(
+    name: String,
+    onClick: () -> Unit,
+    isScheduled: Boolean = false,
+    isPast: Boolean
+) {
+    // Button color: Muted grey for past scheduled meals, Cyan for active scheduled meals
+    val buttonColor = when {
+        isScheduled && isPast -> Color(0xFF00b3b3)
+        isScheduled -> Color.Cyan
+        else -> Color.LightGray
+    }
+
     Button(
         enabled = isScheduled, // get from state variable
         modifier = Modifier
             .padding(10.dp)
             .size(86.dp, 54.dp),
-        colors = if (isScheduled) buttonColors(Color.Cyan) else buttonColors(Color.LightGray),
+        colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
         contentPadding = PaddingValues(10.dp),
         shape = RoundedCornerShape(10.dp),
-        onClick = onClick)
-    {
-        Text(name)
+        onClick = onClick
+    ) {
+        Text(
+            text = name,
+            //color = if (isPast) Color.Gray else Color.Unspecified
+        )
     }
 }
 
