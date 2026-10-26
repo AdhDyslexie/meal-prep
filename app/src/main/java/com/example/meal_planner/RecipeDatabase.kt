@@ -111,17 +111,6 @@ abstract class RecipeDatabase : RoomDatabase() {
                     )
                 }
             }
-
-            // Seed an init recipe schedule
-            dao.insertScheduledRecipe(
-                ScheduledRecipe(
-                    date = LocalDate(2026, 10, 24),
-                    mealType = MealType.DINNER,
-                    hasCooked = false,
-                    recipeId = 1
-                )
-            )
-
             Log.i("RecipeDatabase", "Database seeding completed successfully!")
         }
     }

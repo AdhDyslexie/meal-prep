@@ -103,7 +103,8 @@ fun RecipeWithDetails.toRecipeInfo(): RecipeInfo {
         prepTime = recipe.prepTimeMinutes.toFloat(),
         cookTime = recipe.cookTimeMinutes.toFloat(),
         isSaved = recipe.isSaved,
-        mealType = recipe.mealType.name
+        mealType = recipe.mealType.name,
+        image = recipe.image
     )
 }
 

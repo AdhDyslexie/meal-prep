@@ -70,9 +70,15 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Clock
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+
 /*
 FUCK ANDROID DATABASES!
 THREE FUCKING DAYS WASTED TRYING TO GET THIS SHIT TO WORK!
+THREE DAYS THAT SHOULD'VE BEEN SPENT ON THE UI, AHHHHH!!!
 
 Thank you for listening to my ted talk
 */
@@ -638,7 +644,7 @@ fun ScheduleButton(
 
 @Composable
 fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
-    BoxWithConstraints(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .aspectRatio(1.3f)
@@ -646,24 +652,27 @@ fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
             .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.TopCenter
     ) {
-        // box constraints
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
+        val context = LocalContext.current
 
-//        val bitmap = remember { mutableStateOf<Bitmap?>(null) }
-       /* LaunchedEffect(index, width, height) {
-            bitmap.value = viewModel.loadScaledImage(contentResolver, index, width, height)
-        }*/
-//        if (bitmap.value != null) {
-//            Image(
-//                bitmap.value!!.asImageBitmap(),
-//                contentDescription = "",
-//                contentScale = ContentScale.Crop,
-//                modifier = Modifier.fillMaxSize()
-//            )
+        // Dynamically resolve resource ID by string name (e.g. "banana_chia_oatmeal")
+        val imageResId = remember(recipeInfo.image) {
+            getDrawableIdForRecipe(recipeInfo.image)
+        }
+        Log.i("RecipeCard", "Image path is: ${recipeInfo.image} & imageResId is: $imageResId")
+        if (imageResId != 0) {
+            Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = recipeInfo.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            // Fallback text if no image exists
+            Text(text = "No Image atm", fontSize = 16.sp)
+        }
         Text(text = recipeInfo.name, fontSize = 16.sp)
 
-        // Fill button triggers onClick
+        // Overlay button (trigger RecipeDetails)
         Button(
             shape = RoundedCornerShape(10.dp),
             onClick = onClick,
@@ -678,12 +687,6 @@ fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
                 Color.Transparent
             )
         )
-//        } else {
-//            Text(
-//                text = "Loading image...",
-//                modifier = Modifier.align(Alignment.Center)
-//            )
-//        }
     }
 }
 
@@ -980,4 +983,26 @@ fun ScheduleMealDialog(
             }
         }
     )
+}
+
+fun getDrawableIdForRecipe(imageName: String): Int {
+    return when (imageName) {
+        "banana_blueberry_overnight_oats" -> R.drawable.banana_blueberry_overnight_oats
+        "banana_chia_oatmeal" -> R.drawable.banana_chia_oatmeal
+        "beef_and_avocado_tacos" -> R.drawable.beef_and_avocado_tacos
+        "blueberry_pancakes" -> R.drawable.blueberry_pancakes
+        "chicken_and_brown_rice_soup" -> R.drawable.chicken_and_brown_rice_soup
+        "chicken_and_vegetable_stirfry" -> R.drawable.chicken_and_vegetable_stirfry
+        "chickpea_coconut_curry" -> R.drawable.chickpea_coconut_curry
+        "coconut_lentil_curry" -> R.drawable.coconut_lentil_curry
+        "ginger_soy_salmon_with_broccoli" -> R.drawable.ginger_soy_salmon_with_broccoli
+        "lentil_and_vegetable_soup" -> R.drawable.lentil_and_vegetable_soup
+        "mediterranean_chickpea_quinoa_salad" -> R.drawable.mediterranean_chickpea_quinoa_salad
+        "mediterranean_quinoa_bowl" -> R.drawable.mediterranean_quinoa_bowl
+        "spaghetti_carbonara" -> R.drawable.spaghetti_carbonara
+        "spinach_and_feta_omelet" -> R.drawable.spinach_and_feta_omelet
+        "spinach_and_feta_scramble" -> R.drawable.spinach_and_feta_scramble
+        "tofu_and_vegetable_stirfry" -> R.drawable.tofu_and_vegetable_stirfry
+        else -> 0
+    }
 }
