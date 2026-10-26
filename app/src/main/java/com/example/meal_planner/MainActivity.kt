@@ -6,17 +6,26 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +62,10 @@ import androidx.compose.ui.unit.sp
 import com.example.meal_planner.ui.theme.MealplannerTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import kotlinx.datetime.*
 import java.time.format.DateTimeFormatter
 import kotlin.time.Clock
@@ -315,89 +328,137 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
         list
     }
 
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Recipe Page", fontSize = 30.sp)
+    var selectedRecipe by remember { mutableStateOf<RecipeInfo?>(null) }
 
-        // All / Saved Selector Buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(5.dp)
-                .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Button(
-                onClick = { changeRecipeList = 0 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (changeRecipeList == 0) Color.Blue else Color.Gray
-                )
-            ) { Text("All Recipes") }
+            Text(text = "Recipe Page", fontSize = 30.sp)
 
-            Button(
-                onClick = { changeRecipeList = 1 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (changeRecipeList == 1) Color.Blue else Color.Gray
-                )
-            ) { Text("Saved Recipes") }
-        }
+            // All / Saved Selector Buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp)
+                    .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(
+                    onClick = { changeRecipeList = 0 },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (changeRecipeList == 0) Color.Blue else Color.Gray
+                    )
+                ) { Text("All Recipes") }
 
-        // Filter Options Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(5.dp)
-                .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Category Dropdown
-            SingleSelectDropdown(
-                label = "Category",
-                options = MealType.entries.map { it.name },
-                selectedOption = selectedCategory,
-                onOptionSelected = { category ->
-                    selectedCategory = if (selectedCategory == category) null else category
-                }
-            )
+                Button(
+                    onClick = { changeRecipeList = 1 },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (changeRecipeList == 1) Color.Blue else Color.Gray
+                    )
+                ) { Text("Saved Recipes") }
+            }
 
-            // Tags Dropdown (Multi-select)
-            MultiSelectDropdown(
-                label = "Filter By",
-                options = allTags,
-                selectedOptions = selectedTags,
-                onOptionToggled = { tag ->
-                    selectedTags = if (selectedTags.contains(tag)) {
-                        selectedTags - tag
-                    } else {
-                        selectedTags + tag
+            // Filter Options Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp)
+                    .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Category Dropdown
+                SingleSelectDropdown(
+                    label = "Category",
+                    options = MealType.entries.map { it.name },
+                    selectedOption = selectedCategory,
+                    onOptionSelected = { category ->
+                        selectedCategory = if (selectedCategory == category) null else category
                     }
-                }
-            )
+                )
 
-            // Sort By Dropdown
-            SingleSelectDropdown(
-                label = "Sort By",
-                options = listOf("Name (A-Z)", "Name (Z-A)", "Time to cook (Q-L)"),
-                selectedOption = selectedSort,
-                onOptionSelected = { sortOption ->
-                    selectedSort = if (selectedSort == sortOption) null else sortOption
+                // Tags Dropdown (Multi-select)
+                MultiSelectDropdown(
+                    label = "Filter By",
+                    options = allTags,
+                    selectedOptions = selectedTags,
+                    onOptionToggled = { tag ->
+                        selectedTags = if (selectedTags.contains(tag)) {
+                            selectedTags - tag
+                        } else {
+                            selectedTags + tag
+                        }
+                    }
+                )
+
+                // Sort By Dropdown
+                SingleSelectDropdown(
+                    label = "Sort By",
+                    options = listOf("Name (A-Z)", "Name (Z-A)", "Time to cook (Q-L)"),
+                    selectedOption = selectedSort,
+                    onOptionSelected = { sortOption ->
+                        selectedSort = if (selectedSort == sortOption) null else sortOption
+                    }
+                )
+            }
+
+            // List a grid of recipes
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(5.dp)
+            ) {
+                items(
+                    items = filteredRecipes,
+                    key = { recipe -> recipe.id }
+                ) { recipe ->
+                    RecipeCard(
+                        recipeInfo = recipe,
+                        onClick = { selectedRecipe = recipe }
+                    )
                 }
+            }
+        }
+
+        // 1. Track whether the overlay is open or closed
+        val isExpanded = selectedRecipe != null
+
+        // 2. Background Dimmer
+        if (isExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable { selectedRecipe = null } // Tap outside to close
             )
         }
 
-        // List a grid of recipes
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize().padding(5.dp)
+        // 3. Animated Grow/Shrink Container
+        AnimatedVisibility(
+            visible = isExpanded,
+            modifier = Modifier.align(Alignment.Center),
+            enter = fadeIn() + scaleIn(initialScale = 0.8f), // Grows into view
+            exit = fadeOut() + scaleOut(targetScale = 0.8f)   // Shrinks back down
         ) {
-            items(
-                items = filteredRecipes,
-                key = { recipe -> recipe.id }
-            ) { recipe ->
-                RecipeCard(recipe)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .fillMaxHeight(0.85f),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
+            ) {
+                RecipeDetails(
+                    recipeInfo = selectedRecipe,
+                    onClose = { selectedRecipe = null } // Exit button callback
+                )
             }
         }
     }
@@ -413,11 +474,9 @@ fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) 
 @Composable
 fun ScheduleCard(dayOfWeek: String, dateText: String, scheduledMeals: List<ScheduledRecipeInfo> = emptyList()) {
     /*
-    - Day of week should be queried & then displays
-    - Date should be queried & then displayed
-    - Buttons should open an overlay with the meals details that was assigned to it
-        - Details collected from a database
-    - If nothing is assigned to a button its state should be set to hidden
+    TODO:
+    - Highlight the border of today's meals
+    - Grey out the days that have past this week
     */
 
     // Find scheduled meal for each meal type on this day
@@ -457,7 +516,7 @@ fun ScheduleCard(dayOfWeek: String, dateText: String, scheduledMeals: List<Sched
 @Composable
 fun ScheduleButton(name: String, onClick: () -> Unit, isScheduled: Boolean = false) {
     Button(
-        enabled = true, // get from state variable
+        enabled = isScheduled, // get from state variable
         modifier = Modifier
             .padding(10.dp)
             .size(86.dp, 54.dp),
@@ -471,24 +530,14 @@ fun ScheduleButton(name: String, onClick: () -> Unit, isScheduled: Boolean = fal
 }
 
 @Composable
-fun RecipeCard(recipeInfo: RecipeInfo) {
-    /*
-    Needs a:
-    - Constrained box
-    - Title
-    - Image (when added)
-    - Button (transparent) that fills the whole box
-    */
-
+fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .aspectRatio(1.3f)
             .background(Color.LightGray, shape = RoundedCornerShape(10.dp))
-            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
-        ,
+            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.TopCenter
-//            .graphicsLayer { rotationY = angle; clip = false },
     ) {
         // box constraints
         val width = constraints.maxWidth
@@ -507,23 +556,13 @@ fun RecipeCard(recipeInfo: RecipeInfo) {
 //            )
         Text(text = recipeInfo.name, fontSize = 16.sp)
 
+        // Fill button triggers onClick
         Button(
             shape = RoundedCornerShape(10.dp),
-            onClick = {
-                /*  if (index < viewModel.imageList.size) {
-                       viewModel.currentImage = viewModel.imageList[index]
-                       viewModel.currentImageIdx = index
-                       onClick()
-                       coroutineScope.launch {
-                           pagerState.animateScrollToPage(1)
-                       }
-                   }*/
-                // TODO: Open RecipeDetials()
-            },
+            onClick = onClick,
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxSize(),
-
             content = { Text(text = "") },
             colors = ButtonColors(
                 Color.Transparent,
@@ -621,35 +660,85 @@ fun MultiSelectDropdown(
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun RecipeDetials() {
+fun RecipeDetails(recipeInfo: RecipeInfo?, onClose: () -> Unit) {
     /*
      - Details should be an overlay, with dynamic content
      - Should grow into place when opened
      - Should shrink into place when closed
     */
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = { Log.i("RecipeDetials", "Exit") }) { Text("X") }
-        Text(text = "<Recipe Name>", fontSize = 30.sp) // title
-//        Image()
-        Column(modifier = Modifier
-            .fillMaxWidth(0.875f)
-            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
-        ) { // Ingredients
-            // Bullet list of ingredients
-            Text("- Ingredient 1")
-            Text("- Ingredient 2")
-            Text("- Ingredient 3")
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Exit button row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = { onClose() }) { Text("X") }
         }
-        Column(modifier = Modifier
-            .fillMaxWidth(0.875f)
-            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
-        ) { // Instructions
-            // Numbered list of instructions
-            Text("1. Instruction")
-            Text("2. Instruction")
-            Text("3. Instruction")
+
+        // Title
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = recipeInfo?.name ?: "<Recipe Name>", fontSize = 28.sp)
+        }
+
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(onClick = { Log.i("RecipeDetails", "Saved") }) { Text("Save") }
+            Button(onClick = { Log.i("RecipeDetails", "To Cook") }) { Text("Cook") }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Ingredients
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.875f)
+                .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+                .padding(8.dp)
+        ) {
+            Text("Ingredients:", fontWeight = FontWeight.Bold)
+            recipeInfo?.ingredientsInfo?.forEach { ingredient ->
+                Text("- ${ingredient.quantity} ${ingredient.unit}: ${ingredient.name}")
+            } ?: run {
+                Text("- Ingredient 1")
+                Text("- Ingredient 2")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Instructions
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.875f)
+                .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+                .padding(8.dp)
+        ) {
+            Text("Instructions:", fontWeight = FontWeight.Bold)
+            recipeInfo?.instructions?.forEach {step ->
+                Text(step)
+            } ?: run {
+                Text("1. Instruction")
+                Text("2. Instruction")
+            }
         }
     }
 }
