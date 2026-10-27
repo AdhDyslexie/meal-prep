@@ -3,8 +3,10 @@ package com.example.meal_planner
 import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
+import kotlinx.datetime.DayOfWeek
 import java.time.LocalDateTime
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 
 
 data class RecipeInfo(
@@ -34,6 +36,33 @@ data class ScheduledRecipeInfo(
     val mealType: String,
     val haveCooked: Boolean,
     val recipeInfo: RecipeInfo
+)
+
+data class IngredientSeed(
+    val name: String,
+    val quantity: Float = 1f,
+    val unit: String = "g"
+)
+
+data class RecipeSeed(
+    val recipe: Recipe,
+    val tags: List<String>,
+    val ingredients: List<IngredientSeed>,
+    val imagePath: String = ""
+)
+
+data class DayCellInfo(
+    val date: LocalDate,
+    val month: Month,
+    val dayOfMonth: Int,
+    val dayOfWeek: DayOfWeek
+)
+data class ShoppingItem(
+    val id: String,
+    val name: String,
+    val quantity: Float,
+    val unit: String,
+    val isChecked: Boolean = false
 )
 
 // --- Room Relation Classes for Querying Composite Data ---

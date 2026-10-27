@@ -1,7 +1,6 @@
 package com.example.meal_planner
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,7 +15,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -95,20 +93,6 @@ Thank you for listening to my ted talk
 */
 
 
-data class DayCellInfo(
-    val date: LocalDate,
-    val month: Month,
-    val dayOfMonth: Int,
-    val dayOfWeek: DayOfWeek
-)
-data class ShoppingItem(
-    val id: String,
-    val name: String,
-    val quantity: Float,
-    val unit: String,
-    val isChecked: Boolean = false
-)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,7 +134,6 @@ fun MainScreen(viewModel: RecipeViewModel) {
     }
 }
 
-//@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun Pager(
     modifier: Modifier,
@@ -196,7 +179,7 @@ fun BottomNavBar(onPageSelected: (Int) -> Unit) {
 fun SchedulePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
     // Current week dates & queries
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
-    val weekDays = remember(today) { getWeekDaysFor(today) }
+    val weekDays = remember(today) { viewmodel.getWeekDaysFor(today) }
     val weekDates = remember(weekDays) { weekDays.map {it.date}.toSet() }
     val rawSchedule = viewmodel.getAllScheduledInfo().collectAsState(emptyList()).value
     val filteredSchedule = remember(rawSchedule, weekDates) {
@@ -402,7 +385,8 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
                 ) { recipe ->
                     RecipeCard(
                         recipeInfo = recipe,
-                        onClick = { selectedRecipe = recipe }
+                        onClick = { selectedRecipe = recipe },
+                        viewmodel
                     )
                 }
             }
@@ -457,7 +441,7 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
 
 @Composable
 fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
-    var shoppingList = viewmodel.shoppingList
+    val shoppingList = viewmodel.shoppingList
     val rawSchedule = viewmodel.getAllScheduledInfo().collectAsState(initial = emptyList()).value
 
     Column(
@@ -482,7 +466,7 @@ fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) 
                 Button(
                     onClick = {
                         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-                        val weekDays = getWeekDaysFor(today)
+                        val weekDays = viewmodel.getWeekDaysFor(today)
                         val weekDates = weekDays.map { it.date }.toSet()
 
                         // Filter remaining scheduled meals for the current week that haven't been cooked
@@ -490,7 +474,7 @@ fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) 
                             .map { it.toScheduledRecipeInfo() }
                             .filter { it.date in weekDates && it.date >= today && !it.haveCooked }
 
-                        viewmodel.shoppingList = generateShoppingList(remainingMeals)
+                        viewmodel.shoppingList = viewmodel.generateShoppingList(remainingMeals)
                     }
                 ) {
                     Text("Generate List for Remaining Week")
@@ -689,7 +673,11 @@ fun ScheduleButton(
 }
 
 @Composable
-fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
+fun RecipeCard(
+    recipeInfo: RecipeInfo,
+    onClick: () -> Unit,
+    viewmodel: RecipeViewModel
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -701,7 +689,7 @@ fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
         val context = LocalContext.current
 
         val imageResId = remember(recipeInfo.image) {
-            getDrawableIdForRecipe(recipeInfo.image)
+            viewmodel.getDrawableIdForRecipe(recipeInfo.image)
         }
 
         // Load downscaled bitmap on Dispatchers.IO asynchronously
@@ -709,7 +697,8 @@ fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
             context = context,
             resId = imageResId,
             targetWidthPx = 300,
-            targetHeightPx = 300
+            targetHeightPx = 300,
+            viewmodel
         )
 
         if (imageBitmap != null) {
@@ -838,7 +827,6 @@ fun MultiSelectDropdown(
     }
 }
 
-
 @Composable
 fun RecipeDetails(
     recipeInfo: RecipeInfo?,
@@ -952,26 +940,6 @@ fun RecipeDetails(
     }
 }
 
-
-fun getWeekDaysFor(targetDate: LocalDate): List<DayCellInfo> {
-    // Find the offset from Monday (ISO day number: Monday = 1, Sunday = 7)
-    val daysFromMonday = targetDate.dayOfWeek.isoDayNumber - 1
-
-    // Subtract those days to land precisely on Monday of this week
-    val monday = targetDate.minus(daysFromMonday, DateTimeUnit.DAY)
-
-    // Loop through 0 to 6 to generate Monday through Sunday
-    return (0..6).map { offset ->
-        val currentDay = monday.plus(offset, DateTimeUnit.DAY)
-        DayCellInfo(
-            date = currentDay,
-            month = currentDay.month,
-            dayOfMonth = currentDay.day,
-            dayOfWeek = currentDay.dayOfWeek
-        )
-    }
-}
-
 @Composable
 fun ScheduleMealDialog(
     recipeInfo: RecipeInfo,
@@ -1049,34 +1017,13 @@ fun ScheduleMealDialog(
     )
 }
 
-fun getDrawableIdForRecipe(imageName: String): Int {
-    return when (imageName) {
-        "banana_blueberry_overnight_oats" -> R.drawable.banana_blueberry_overnight_oats
-        "banana_chia_oatmeal" -> R.drawable.banana_chia_oatmeal
-        "beef_and_avocado_tacos" -> R.drawable.beef_and_avocado_tacos
-        "blueberry_pancakes" -> R.drawable.blueberry_pancakes
-        "chicken_and_brown_rice_soup" -> R.drawable.chicken_and_brown_rice_soup
-        "chicken_and_vegetable_stirfry" -> R.drawable.chicken_and_vegetable_stirfry
-        "chickpea_coconut_curry" -> R.drawable.chickpea_coconut_curry
-        "coconut_lentil_curry" -> R.drawable.coconut_lentil_curry
-        "ginger_soy_salmon_with_broccoli" -> R.drawable.ginger_soy_salmon_with_broccoli
-        "lentil_and_vegetable_soup" -> R.drawable.lentil_and_vegetable_soup
-        "mediterranean_chickpea_quinoa_salad" -> R.drawable.mediterranean_chickpea_quinoa_salad
-        "mediterranean_quinoa_bowl" -> R.drawable.mediterranean_quinoa_bowl
-        "spaghetti_carbonara" -> R.drawable.spaghetti_carbonara
-        "spinach_and_feta_omelet" -> R.drawable.spinach_and_feta_omelet
-        "spinach_and_feta_scramble" -> R.drawable.spinach_and_feta_scramble
-        "tofu_and_vegetable_stirfry" -> R.drawable.tofu_and_vegetable_stirfry
-        else -> 0
-    }
-}
-
 @Composable
 fun rememberBitmapFromDrawable(
     context: Context,
     resId: Int,
     targetWidthPx: Int = 300,
-    targetHeightPx: Int = 300
+    targetHeightPx: Int = 300,
+    viewmodel: RecipeViewModel
 ): ImageBitmap? {
     if (resId == 0) return null
 
@@ -1088,7 +1035,7 @@ fun rememberBitmapFromDrawable(
                 BitmapFactory.decodeResource(context.resources, resId, options)
 
                 // Calculate sample size to downscale image
-                options.inSampleSize = calculateInSampleSize(options, targetWidthPx, targetHeightPx)
+                options.inSampleSize = viewmodel.calculateInSampleSize(options, targetWidthPx, targetHeightPx)
                 options.inJustDecodeBounds = false
 
                 // Decode scaled bitmap
@@ -1101,44 +1048,3 @@ fun rememberBitmapFromDrawable(
     }.value
 }
 
-private fun calculateInSampleSize(
-    options: BitmapFactory.Options,
-    reqWidth: Int,
-    reqHeight: Int
-): Int {
-    val (height: Int, width: Int) = options.outHeight to options.outWidth
-    var inSampleSize = 1
-    if (height > reqHeight || width > reqWidth) {
-        val halfHeight: Int = height / 2
-        val halfWidth: Int = width / 2
-        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-            inSampleSize *= 2
-        }
-    }
-    return inSampleSize
-}
-
-// List should remain ephemeral
-fun generateShoppingList(scheduledMeals: List<ScheduledRecipeInfo>): List<ShoppingItem> {
-    val map = mutableMapOf<String, ShoppingItem>()
-
-    for (meal in scheduledMeals) {
-        for (ingredient in meal.recipeInfo.ingredientsInfo) {
-            val key = ingredient.name.lowercase().trim()
-            val existing = map[key]
-
-            if (existing != null) {
-                // Combine quantities for duplicate ingredients
-                map[key] = existing.copy(quantity = existing.quantity + ingredient.quantity)
-            } else {
-                map[key] = ShoppingItem(
-                    id = key,
-                    name = ingredient.name,
-                    quantity = ingredient.quantity,
-                    unit = ingredient.unit
-                )
-            }
-        }
-    }
-    return map.values.toList()
-}

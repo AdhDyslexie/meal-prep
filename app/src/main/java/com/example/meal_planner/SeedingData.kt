@@ -1,18 +1,5 @@
 package com.example.meal_planner
 
-data class IngredientSeed(
-    val name: String,
-    val quantity: Float = 1f,
-    val unit: String = "g"
-)
-
-data class RecipeSeed(
-    val recipe: Recipe,
-    val tags: List<String>,
-    val ingredients: List<IngredientSeed>,
-    val imagePath: String = ""
-)
-
 object DatabaseData {
     val tags = listOf(
         // Diet and dietary requirements
