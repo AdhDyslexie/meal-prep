@@ -73,7 +73,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import android.content.Context
+import android.graphics.BitmapFactory
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /*
 FUCK ANDROID DATABASES!
@@ -132,10 +138,6 @@ fun Pager(
     viewmodel: RecipeViewModel,
     pagerState: PagerState,
 ) {
-
-    // Trigger db seeding / queries
-    DBTest(viewmodel)
-
     // Horizontal pager with 3 pages
     HorizontalPager(
         state = pagerState,
@@ -146,93 +148,6 @@ fun Pager(
             0 -> SchedulePage(modifier, viewmodel)
             1 -> RecipePage(modifier, viewmodel)
             2 -> ShoppingListPage(modifier, viewmodel)
-        }
-    }
-}
-
-@Composable
-fun DBTest(viewmodel: RecipeViewModel) {
-
-    // Trigger db seeding
-    val seed = viewmodel.getAllRecipes().collectAsState(emptyList()).value
-    Log.i("Pager", seed.toString())
-
-
-    // Query tests
-
-    val recipeList = viewmodel.getAllRecipesWithDetails().collectAsState(emptyList()).value
-    Log.i("Pager", "Size of recipeList: " + recipeList.size.toString())
-
-    val recipe = recipeList.firstOrNull()
-    recipe?.let { // needed because of recompilation
-        val recipe = it.toRecipeInfo()
-        Log.i("Pager", recipe.toString())
-    }
-
-    val initSchedule = viewmodel.getAllScheduledInfo().collectAsState(emptyList()).value
-    Log.i("Pager", "Size of initSchedule: " + initSchedule.size.toString())
-
-    val schedule = initSchedule.firstOrNull()
-    schedule?.let {
-        val schedule = it.toScheduledRecipeInfo()
-        Log.i("Pager", "Scheduled Recipe Info:\n${schedule.toString()}")
-    }
-
-    val initTags = viewmodel.getAllTags().collectAsState(emptyList()).value
-    Log.i("Pager", "Size of initTags: " + initTags.size.toString())
-
-    initTags.let {
-        Log.i("Pager", "All tags:\n")
-        for(i in it) {
-            Log.i("Pager", "\t" + i.name)
-        }
-    }
-
-    val initIngredient = viewmodel.getAllIngredients().collectAsState(emptyList()).value
-    Log.i("Pager", "Size of initIngredient: " + initIngredient.size.toString())
-
-    initIngredient.let {
-        Log.i("Pager", "All initIngredient:\n")
-        for(i in it) {
-            Log.i("Pager", "\t" + i.name)
-        }
-    }
-
-    val firstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
-    firstRecipe?.let {
-        val recipeInfo = it.toRecipeInfo()
-        Log.i("Pager", "First Recipe:\n\t $recipeInfo")
-    }
-
-    val firstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
-    firstSchedule?.let {
-        val schedule = it.toScheduledRecipeInfo()
-        Log.i("Pager", "First Recipe:\n\t $schedule")
-    }
-
-    // Update tests
-    val test = false
-    if(test) {
-
-        firstRecipe?.let {
-            val recipeInfo = it.toRecipeInfo()
-            viewmodel.updateRecipeSavedState(recipeInfo.id, true)
-        }
-
-        val newFirstRecipe = viewmodel.getRecipeInfo(1).collectAsState(null).value
-        firstRecipe?.let {
-            val recipeInfo = it.toRecipeInfo()
-            Log.i("Pager", "First Recipe save state = \n\t ${recipeInfo.isSaved}")
-        }
-
-        firstSchedule?.let {
-            val schedule = it.toScheduledRecipeInfo()
-            viewmodel.updateRecipeCookedSate(schedule.id, false)
-        }
-        val newFirstSchedule = viewmodel.getScheduledInfo(1).collectAsState(null).value
-        newFirstSchedule?.let {
-            val schedule = it.toScheduledRecipeInfo()
-            Log.i("Pager", "First Schedule has cooked = \n\t ${schedule.haveCooked}")
         }
     }
 }
@@ -649,28 +564,51 @@ fun RecipeCard(recipeInfo: RecipeInfo, onClick: () -> Unit) {
             .fillMaxSize()
             .aspectRatio(1.3f)
             .background(Color.LightGray, shape = RoundedCornerShape(10.dp))
-            .border(1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+            .border(3.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.TopCenter
     ) {
         val context = LocalContext.current
 
-        // Dynamically resolve resource ID by string name (e.g. "banana_chia_oatmeal")
         val imageResId = remember(recipeInfo.image) {
             getDrawableIdForRecipe(recipeInfo.image)
         }
-        Log.i("RecipeCard", "Image path is: ${recipeInfo.image} & imageResId is: $imageResId")
-        if (imageResId != 0) {
+
+        // Load downscaled bitmap on Dispatchers.IO asynchronously
+        val imageBitmap = rememberBitmapFromDrawable(
+            context = context,
+            resId = imageResId,
+            targetWidthPx = 300,
+            targetHeightPx = 300
+        )
+
+        if (imageBitmap != null) {
             Image(
-                painter = painterResource(id = imageResId),
+                bitmap = imageBitmap,
                 contentDescription = recipeInfo.name,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+            Text(
+                text = recipeInfo.name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .padding(4.dp)
+            )
         } else {
-            // Fallback text if no image exists
-            Text(text = "No Image atm", fontSize = 16.sp)
+            Text(
+                text = recipeInfo.name,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(8.dp)
+            )
         }
-        Text(text = recipeInfo.name, fontSize = 16.sp)
 
         // Overlay button (trigger RecipeDetails)
         Button(
@@ -1005,4 +943,51 @@ fun getDrawableIdForRecipe(imageName: String): Int {
         "tofu_and_vegetable_stirfry" -> R.drawable.tofu_and_vegetable_stirfry
         else -> 0
     }
+}
+
+@Composable
+fun rememberBitmapFromDrawable(
+    context: Context,
+    resId: Int,
+    targetWidthPx: Int = 300,
+    targetHeightPx: Int = 300
+): ImageBitmap? {
+    if (resId == 0) return null
+
+    return produceState<ImageBitmap?>(initialValue = null, resId) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                // Calculate dimensions without decoding full bitmap into memory
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeResource(context.resources, resId, options)
+
+                // Calculate sample size to downscale image
+                options.inSampleSize = calculateInSampleSize(options, targetWidthPx, targetHeightPx)
+                options.inJustDecodeBounds = false
+
+                // Decode scaled bitmap
+                val bitmap = BitmapFactory.decodeResource(context.resources, resId, options)
+                bitmap?.asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }.value
+}
+
+private fun calculateInSampleSize(
+    options: BitmapFactory.Options,
+    reqWidth: Int,
+    reqHeight: Int
+): Int {
+    val (height: Int, width: Int) = options.outHeight to options.outWidth
+    var inSampleSize = 1
+    if (height > reqHeight || width > reqWidth) {
+        val halfHeight: Int = height / 2
+        val halfWidth: Int = width / 2
+        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+            inSampleSize *= 2
+        }
+    }
+    return inSampleSize
 }
