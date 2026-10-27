@@ -2,6 +2,7 @@ package com.example.meal_planner
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +24,8 @@ class RecipeViewModelFactory(val context: Context) : ViewModelProvider.Factory {
 class RecipeViewModel(context: Context) : ViewModel(), RecipeInterface {
 
     // REMINDER: Only function that modify the db (create, update, delete) need coroutines.
+
+    var shoppingList by mutableStateOf<List<ShoppingItem>?>(null)
 
     val mDao: RecipeDao
     init {

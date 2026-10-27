@@ -75,11 +75,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 
 /*
 FUCK ANDROID DATABASES!
@@ -89,6 +94,20 @@ THREE DAYS THAT SHOULD'VE BEEN SPENT ON THE UI, AHHHHH!!!
 Thank you for listening to my ted talk
 */
 
+
+data class DayCellInfo(
+    val date: LocalDate,
+    val month: Month,
+    val dayOfMonth: Int,
+    val dayOfWeek: DayOfWeek
+)
+data class ShoppingItem(
+    val id: String,
+    val name: String,
+    val quantity: Float,
+    val unit: String,
+    val isChecked: Boolean = false
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -174,10 +193,7 @@ fun BottomNavBar(onPageSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun SchedulePage(
-    modifier: Modifier = Modifier,
-    viewmodel: RecipeViewModel
-) {
+fun SchedulePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
     // Current week dates & queries
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
     val weekDays = remember(today) { getWeekDaysFor(today) }
@@ -245,7 +261,6 @@ fun SchedulePage(
         }
     }
 }
-
 
 @Composable
 fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
@@ -441,12 +456,128 @@ fun RecipePage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
 }
 
 @Composable
-fun ShoppingListPage(
-    modifier: Modifier = Modifier,
-    viewmodel: RecipeViewModel
-) {
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Shopping List Page", fontSize = 30.sp)
+fun ShoppingListPage(modifier: Modifier = Modifier, viewmodel: RecipeViewModel) {
+    var shoppingList = viewmodel.shoppingList
+    val rawSchedule = viewmodel.getAllScheduledInfo().collectAsState(initial = emptyList()).value
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Shopping List Page", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (shoppingList.isNullOrEmpty()) {
+            // Prompt user to create list, if none exist
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "No active shopping list", fontSize = 18.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                        val weekDays = getWeekDaysFor(today)
+                        val weekDates = weekDays.map { it.date }.toSet()
+
+                        // Filter remaining scheduled meals for the current week that haven't been cooked
+                        val remainingMeals = rawSchedule
+                            .map { it.toScheduledRecipeInfo() }
+                            .filter { it.date in weekDates && it.date >= today && !it.haveCooked }
+
+                        viewmodel.shoppingList = generateShoppingList(remainingMeals)
+                    }
+                ) {
+                    Text("Generate List for Remaining Week")
+                }
+            }
+        } else {
+            // Display active shopping list
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Items (${shoppingList?.size ?: 0})", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Button(
+                    colors = buttonColors(containerColor = Color.Red),
+                    onClick = { viewmodel.shoppingList = null } // Reset list
+                ) {
+                    Text("Clear List")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(
+                    items = shoppingList ?: emptyList(),
+                    key = { item -> item.id }
+                ) { item ->
+                    val isChecked = item.isChecked
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // Toggle item check
+                                viewmodel.shoppingList = viewmodel.shoppingList?.map {
+                                    if (it.id == item.id) it.copy(isChecked = !it.isChecked) else it
+                                }
+                            }
+                            .border(1.dp, color = Color.LightGray, shape = RoundedCornerShape(8.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = { checked ->
+                                viewmodel.shoppingList = viewmodel.shoppingList?.map {
+                                    if (it.id == item.id) it.copy(isChecked = checked) else it
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Format combined total quantity (e.g. 3 instead of 3.0)
+                        val formattedQuantity = if (item.quantity % 1f == 0f) {
+                            item.quantity.toInt().toString()
+                        } else {
+                            item.quantity.toString()
+                        }
+
+                        // Display total quantity with unit and name
+                        val displayText = when {
+                            item.unit.isBlank() || item.unit.equals("pcs", ignoreCase = true) || item.unit.equals("pc", ignoreCase = true) -> {
+                                "$formattedQuantity ${item.name}" // e.g. "3 Eggs"
+                            }
+                            else -> {
+                                "$formattedQuantity ${item.unit} ${item.name}" // e.g. "300 g Rolled Oats"
+                            }
+                        }
+
+                        Text(
+                            text = displayText,
+                            fontSize = 18.sp,
+                            style = TextStyle(
+                                textDecoration = if (isChecked) TextDecoration.LineThrough else TextDecoration.None
+                            ),
+                            color = if (isChecked) Color.Gray else Color.Unspecified
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -821,12 +952,7 @@ fun RecipeDetails(
     }
 }
 
-data class DayCellInfo(
-    val date: LocalDate,
-    val month: Month,
-    val dayOfMonth: Int,
-    val dayOfWeek: DayOfWeek
-)
+
 fun getWeekDaysFor(targetDate: LocalDate): List<DayCellInfo> {
     // Find the offset from Monday (ISO day number: Monday = 1, Sunday = 7)
     val daysFromMonday = targetDate.dayOfWeek.isoDayNumber - 1
@@ -990,4 +1116,29 @@ private fun calculateInSampleSize(
         }
     }
     return inSampleSize
+}
+
+// List should remain ephemeral
+fun generateShoppingList(scheduledMeals: List<ScheduledRecipeInfo>): List<ShoppingItem> {
+    val map = mutableMapOf<String, ShoppingItem>()
+
+    for (meal in scheduledMeals) {
+        for (ingredient in meal.recipeInfo.ingredientsInfo) {
+            val key = ingredient.name.lowercase().trim()
+            val existing = map[key]
+
+            if (existing != null) {
+                // Combine quantities for duplicate ingredients
+                map[key] = existing.copy(quantity = existing.quantity + ingredient.quantity)
+            } else {
+                map[key] = ShoppingItem(
+                    id = key,
+                    name = ingredient.name,
+                    quantity = ingredient.quantity,
+                    unit = ingredient.unit
+                )
+            }
+        }
+    }
+    return map.values.toList()
 }
